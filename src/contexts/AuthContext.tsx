@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient'
 import { store } from '@/lib/localStore'
-import { getUserById } from '@/lib/db'
+import { getUserById, ensureUserProfile } from '@/lib/db'
 import type { AppUser } from '@/types'
 
 interface AuthCtx {
@@ -35,15 +35,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.auth.getSession().then(async ({ data }) => {
         const sessionUser = data.session?.user
         if (sessionUser) {
-          const appUser = await getUserById(sessionUser.id)
-          if (mounted) setUser(appUser ?? null)
+          const appUser = await ensureUserProfile(sessionUser)
+          if (mounted) setUser(appUser)
         }
         if (mounted) setLoading(false)
       })
       const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
         if (session?.user) {
-          const appUser = await getUserById(session.user.id)
-          if (mounted) setUser(appUser ?? null)
+          const appUser = await ensureUserProfile(session.user)
+          if (mounted) setUser(appUser)
         } else if (mounted) {
           setUser(null)
         }

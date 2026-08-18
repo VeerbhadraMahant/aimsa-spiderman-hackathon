@@ -213,6 +213,7 @@ create policy "public read academic_events" on public.academic_events for select
 
 -- Users can only write their own rows.
 create policy "users update own row" on public.users for update using (auth.uid() = id);
+create policy "users insert own row" on public.users for insert with check (auth.uid() = id);
 
 create policy "insert own posts" on public.posts for insert with check (auth.uid() = author_id);
 create policy "insert own replies" on public.replies for insert with check (auth.uid() = author_id);

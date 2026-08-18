@@ -11,27 +11,115 @@ function uid(prefix: string) {
 }
 
 // ---------- Users ----------
+// Postgres/Supabase columns are snake_case; AppUser is camelCase. Map explicitly
+// instead of casting — a bare cast silently produces `undefined` for every
+// multi-word field (displayName, communitiesCount, ...).
+function mapUserRow(row: Record<string, any>): AppUser {
+  return {
+    id: row.id,
+    handle: row.handle,
+    displayName: row.display_name,
+    avatarUrl: row.avatar_url ?? undefined,
+    bannerUrl: row.banner_url ?? undefined,
+    department: row.department ?? undefined,
+    role: row.role ?? 'user',
+    whatsapp: row.whatsapp ?? undefined,
+    linkedinUsername: row.linkedin_username ?? undefined,
+    email: row.email ?? undefined,
+    bio: row.bio ?? undefined,
+    communitiesCount: row.communities_count ?? 0,
+    followersCount: row.followers_count ?? 0,
+    followingCount: row.following_count ?? 0,
+    flexCount: row.flex_count ?? 0,
+  }
+}
+
+function userPatchToRow(patch: Partial<AppUser>): Record<string, any> {
+  const row: Record<string, any> = {}
+  if (patch.displayName !== undefined) row.display_name = patch.displayName
+  if (patch.handle !== undefined) row.handle = patch.handle
+  if (patch.avatarUrl !== undefined) row.avatar_url = patch.avatarUrl
+  if (patch.bannerUrl !== undefined) row.banner_url = patch.bannerUrl
+  if (patch.department !== undefined) row.department = patch.department
+  if (patch.role !== undefined) row.role = patch.role
+  if (patch.whatsapp !== undefined) row.whatsapp = patch.whatsapp
+  if (patch.linkedinUsername !== undefined) row.linkedin_username = patch.linkedinUsername
+  if (patch.email !== undefined) row.email = patch.email
+  if (patch.bio !== undefined) row.bio = patch.bio
+  return row
+}
+
 export async function getUsers(): Promise<AppUser[]> {
   if (isSupabaseConfigured && supabase) {
     const { data } = await supabase.from('users').select('*')
-    return (data as AppUser[]) ?? []
+    return (data ?? []).map(mapUserRow)
   }
   return store.users.all()
 }
 
 export async function getUserById(id: string): Promise<AppUser | undefined> {
+  if (isSupabaseConfigured && supabase) {
+    const { data } = await supabase.from('users').select('*').eq('id', id).maybeSingle()
+    return data ? mapUserRow(data) : undefined
+  }
   const users = await getUsers()
   return users.find((u) => u.id === id)
 }
 
 export async function getUserByHandle(handle: string): Promise<AppUser | undefined> {
+  if (isSupabaseConfigured && supabase) {
+    const { data } = await supabase.from('users').select('*').eq('handle', handle).maybeSingle()
+    return data ? mapUserRow(data) : undefined
+  }
   const users = await getUsers()
   return users.find((u) => u.handle === handle)
 }
 
+// Called right after Google sign-in. Creates the `users` row if the
+// on_auth_user_created DB trigger hasn't (or the row was never seeded),
+// so the app never gets stuck treating an authenticated session as logged out.
+export async function ensureUserProfile(authUser: {
+  id: string
+  email?: string | null
+  user_metadata?: Record<string, any>
+}): Promise<AppUser> {
+  const existing = await getUserById(authUser.id)
+  if (existing) return existing
+
+  const handle = (authUser.email?.split('@')[0] || `user_${authUser.id.slice(0, 8)}`)
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, '')
+  const displayName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || handle
+  const avatarUrl = authUser.user_metadata?.avatar_url
+
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase
+      .from('users')
+      .upsert(
+        { id: authUser.id, handle, display_name: displayName, email: authUser.email, avatar_url: avatarUrl, role: 'user' },
+        { onConflict: 'id' },
+      )
+      .select()
+      .maybeSingle()
+    if (!error && data) return mapUserRow(data)
+  }
+
+  return {
+    id: authUser.id,
+    handle,
+    displayName,
+    avatarUrl,
+    role: 'user',
+    communitiesCount: 0,
+    followersCount: 0,
+    followingCount: 0,
+    flexCount: 0,
+  }
+}
+
 export async function updateUser(id: string, patch: Partial<AppUser>): Promise<void> {
   if (isSupabaseConfigured && supabase) {
-    await supabase.from('users').update(patch).eq('id', id)
+    await supabase.from('users').update(userPatchToRow(patch)).eq('id', id)
     return
   }
   const users = store.users.all()
