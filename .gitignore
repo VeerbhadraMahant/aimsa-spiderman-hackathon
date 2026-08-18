@@ -7,3 +7,7 @@ dist-ssr
 .DS_Store
 *.log
 *.tsbuildinfo
+
+# Setup notes with project-specific credentials/URLs — not for the repo
+author-components-setup.md
+google-oauth-setup.md
