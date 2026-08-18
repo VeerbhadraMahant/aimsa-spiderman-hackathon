@@ -62,7 +62,7 @@ export default function Landing() {
   const bars = [40, 55, 48, 65, 60, 78, 72, 90, 85, 100]
 
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
+    <div className="min-h-screen overflow-x-hidden bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
       <FloatingArt variant="home" />
       <div className="relative z-10">
         <header className="sticky top-0 z-30 border-b border-neutral-100 dark:border-neutral-900 bg-white/80 dark:bg-neutral-950/80 backdrop-blur">
@@ -86,8 +86,14 @@ export default function Landing() {
           </div>
         </header>
 
-        <section className="relative mx-auto max-w-6xl overflow-hidden px-6 pb-16 pt-16 sm:pt-24">
-          <div className="pointer-events-none absolute inset-x-0 -top-8 bottom-0 z-0 opacity-70 dark:opacity-90">
+        <div className="relative w-full max-w-full overflow-hidden">
+          <div
+            className="pointer-events-none absolute inset-0 z-0 opacity-70 dark:opacity-90"
+            style={{
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
+              maskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
+            }}
+          >
             <LiquidEther
               colors={theme === 'dark' ? DARK_ETHER_COLORS : LIGHT_ETHER_COLORS}
               autoDemo
@@ -99,66 +105,68 @@ export default function Landing() {
               className="h-full w-full"
             />
           </div>
-          <DecorativeFigure variant={2} className="absolute bottom-0 left-0 z-0 h-40 w-40" />
-          <DecorativeFigure variant={3} className="absolute right-4 top-24 z-0 h-32 w-32" />
-          <div className="relative z-[1] grid gap-12 lg:grid-cols-2 lg:items-center">
-            <div>
-              <h1 className="text-4xl font-black leading-[1.1] tracking-tight text-brand-600 sm:text-5xl lg:text-6xl">
-                A Social Platform for PCCOE
-              </h1>
-              <p className="mt-6 max-w-md text-lg text-neutral-500 dark:text-neutral-400">
-                Aggregate discussions, campus navigation, and encrypted messaging in real time. Monitor events and track
-                opportunities—all without juggling multiple logins.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link to="/login">
-                  <Button className="!bg-neutral-900 !text-white hover:!bg-neutral-800 dark:!bg-white dark:!text-neutral-900 px-6 py-3 text-base">
-                    Get Started
-                  </Button>
-                </Link>
-                <Link to="/login">
-                  <Button variant="secondary" className="px-6 py-3 text-base">
-                    Explore platform
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            <div className="relative mx-auto w-full max-w-sm">
-              <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 shadow-2xl backdrop-blur">
-                <div className="flex items-center gap-1.5 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3">
-                  <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
-                </div>
-                <div className="p-5">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-neutral-400">Total Project Views</p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <Eye size={20} className="text-brand-600" />
-                    <span className="text-3xl font-extrabold tabular-nums">{(viewCount ?? 11461).toLocaleString()}</span>
-                    {delta !== null && delta > 0 && (
-                      <span className="ml-1 flex items-center gap-0.5 rounded-full bg-green-50 dark:bg-green-950 px-2 py-0.5 text-xs font-semibold text-green-600">
-                        <TrendingUp size={12} /> +{delta}
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-neutral-400">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
-                    Live — updating in realtime
-                  </p>
-                  <div className="mt-5 flex h-24 items-end gap-1.5">
-                    {bars.map((h, i) => (
-                      <div key={i} className="flex-1 rounded-t bg-brand-200 dark:bg-brand-800" style={{ height: `${h}%` }} />
-                    ))}
-                  </div>
+          <section className="relative z-[1] mx-auto max-w-6xl px-6 pb-16 pt-16 sm:pt-24">
+            <DecorativeFigure variant={2} className="absolute bottom-0 left-0 z-0 h-40 w-40" />
+            <DecorativeFigure variant={3} className="absolute right-4 top-24 z-0 h-32 w-32" />
+            <div className="relative z-[1] grid gap-12 lg:grid-cols-2 lg:items-center">
+              <div>
+                <h1 className="text-4xl font-black leading-[1.1] tracking-tight text-brand-600 sm:text-5xl lg:text-6xl">
+                  A Social Platform for PCCOE
+                </h1>
+                <p className="mt-6 max-w-md text-lg text-neutral-500 dark:text-neutral-400">
+                  Aggregate discussions, campus navigation, and encrypted messaging in real time. Monitor events and track
+                  opportunities—all without juggling multiple logins.
+                </p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Link to="/login">
+                    <Button className="!bg-neutral-900 !text-white hover:!bg-neutral-800 dark:!bg-white dark:!text-neutral-900 px-6 py-3 text-base">
+                      Get Started
+                    </Button>
+                  </Link>
+                  <Link to="/login">
+                    <Button variant="secondary" className="px-6 py-3 text-base">
+                      Explore platform
+                    </Button>
+                  </Link>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        <div className="space-y-4 border-y border-neutral-100 dark:border-neutral-900 bg-neutral-50/60 dark:bg-neutral-900/40 py-6">
-          <div style={{ height: 56 }}>
+              <div className="relative mx-auto w-full max-w-sm">
+                <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 shadow-2xl backdrop-blur">
+                  <div className="flex items-center gap-1.5 border-b border-neutral-100 dark:border-neutral-800 px-4 py-3">
+                    <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
+                  </div>
+                  <div className="p-5">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-neutral-400">Total Project Views</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <Eye size={20} className="text-brand-600" />
+                      <span className="text-3xl font-extrabold tabular-nums">{(viewCount ?? 11461).toLocaleString()}</span>
+                      {delta !== null && delta > 0 && (
+                        <span className="ml-1 flex items-center gap-0.5 rounded-full bg-green-50 dark:bg-green-950 px-2 py-0.5 text-xs font-semibold text-green-600">
+                          <TrendingUp size={12} /> +{delta}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-neutral-400">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
+                      Live — updating in realtime
+                    </p>
+                    <div className="mt-5 flex h-24 items-end gap-1.5">
+                      {bars.map((h, i) => (
+                        <div key={i} className="flex-1 rounded-t bg-brand-200 dark:bg-brand-800" style={{ height: `${h}%` }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div className="w-full max-w-full space-y-4 overflow-x-hidden border-y border-neutral-100 dark:border-neutral-900 bg-neutral-50/60 dark:bg-neutral-900/40 py-6">
+          <div style={{ height: 56, overflow: 'hidden' }}>
             <LogoLoop
               logos={communityLogos}
               speed={60}

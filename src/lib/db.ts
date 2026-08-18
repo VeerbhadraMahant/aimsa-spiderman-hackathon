@@ -228,10 +228,26 @@ export async function addReply(postId: string, authorId: string, body: string): 
 }
 
 // ---------- Communities ----------
+function mapCommunityRow(row: Record<string, any>): Community {
+  return {
+    id: row.id,
+    handle: row.handle,
+    name: row.name,
+    description: row.description,
+    department: row.department,
+    logoUrl: row.logo_url ?? undefined,
+    bannerUrl: row.banner_url ?? undefined,
+    instagramUrl: row.instagram_url ?? undefined,
+    linkedinUrl: row.linkedin_url ?? undefined,
+    memberCount: row.member_count ?? 0,
+    isNew: row.is_new ?? false,
+  }
+}
+
 export async function getCommunities(): Promise<Community[]> {
   if (isSupabaseConfigured && supabase) {
     const { data } = await supabase.from('communities').select('*')
-    return (data as Community[]) ?? []
+    return (data ?? []).map(mapCommunityRow)
   }
   return store.communities.all()
 }
