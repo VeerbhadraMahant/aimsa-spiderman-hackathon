@@ -11,6 +11,11 @@ meme/exchange feed (XD), an interactive campus map, an academic calendar, a
 student profile/portfolio system, a notifications hub, a mini arcade
 (Chess/Tic-Tac-Toe/Sudoku), and an AI chat assistant named "Buddy."
 
+**Live deployment:** https://aimsa-cohort-hc.vercel.app — running against a
+real Supabase backend (Postgres + Auth + Realtime), real Google OAuth, and a
+live TomTom campus map. Local setup below defaults to a fully working demo
+mode with none of that configured, for anyone cloning this fresh.
+
 ## Quick start (works immediately, no setup required)
 
 ```bash
@@ -144,6 +149,24 @@ src/
 supabase/
   schema.sql      full Postgres schema + RLS policies + auth trigger
 ```
+
+## Auth troubleshooting
+
+If Google sign-in redirects back to `/login` instead of `/dashboard` after a
+successful Google auth, it almost always means one of two things on the
+Supabase side (both are one-time setup steps, not app bugs):
+
+1. **`supabase/schema.sql` was never actually run** against the project — the
+   `users` table (and the trigger that auto-creates a profile row on first
+   sign-in) doesn't exist yet. Run it via SQL Editor → New query.
+2. **The `users` table is missing an INSERT policy for the signed-in user** —
+   without it, the app's client-side fallback (`ensureUserProfile()` in
+   `src/lib/db.ts`, which self-heals a missing profile row) can't insert one
+   either. Fix:
+   ```sql
+   create policy "users insert own row" on public.users for insert with check (auth.uid() = id);
+   ```
+   (already included in `schema.sql` for fresh setups going forward.)
 
 ## Known scope notes (see spec §7 for details)
 
