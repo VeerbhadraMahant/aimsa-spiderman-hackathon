@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react'
-import { Hash, Share2, Shuffle, Heart, ExternalLink, ChevronDown } from 'lucide-react'
+import { Hash, Share2, Shuffle, Heart, ExternalLink, ChevronDown, ImageOff } from 'lucide-react'
 import { getXdItems, toggleXdLike } from '@/lib/db'
 import type { XdItem } from '@/types'
 
 export default function XD() {
   const [items, setItems] = useState<XdItem[]>([])
   const [index, setIndex] = useState(0)
+  const [imgStatus, setImgStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
 
   useEffect(() => {
     getXdItems().then(setItems)
   }, [])
 
   const item = items[index]
+
+  useEffect(() => {
+    setImgStatus('loading')
+  }, [item?.id])
 
   function next() {
     setIndex((i) => (i + 1) % Math.max(items.length, 1))
@@ -36,13 +41,35 @@ export default function XD() {
   }
 
   if (!item) {
-    return <div className="flex h-full items-center justify-center text-sm text-neutral-400">Loading XD…</div>
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-brand-900 via-neutral-950 to-black text-sm font-medium text-neutral-300 lg:left-16 xl:right-[280px]">
+        Loading XD…
+      </div>
+    )
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black lg:left-16 xl:right-[280px]">
-      <div className="relative h-full w-full max-w-md overflow-hidden bg-neutral-900">
-        <img src={item.mediaUrl} alt={item.caption ?? item.tag} className="h-full w-full object-cover" />
+    <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-brand-900 via-neutral-950 to-black lg:left-16 xl:right-[280px]">
+      <div className="relative h-full w-full max-w-md overflow-hidden bg-gradient-to-br from-brand-800 via-neutral-900 to-black">
+        {imgStatus !== 'error' ? (
+          <img
+            key={item.id}
+            src={item.mediaUrl}
+            alt={item.caption ?? item.tag}
+            className={`h-full w-full object-cover transition-opacity duration-300 ${imgStatus === 'loaded' ? 'opacity-100' : 'opacity-0'}`}
+            onLoad={() => setImgStatus('loaded')}
+            onError={() => setImgStatus('error')}
+          />
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-brand-700 via-brand-900 to-neutral-950 px-8 text-center">
+            <ImageOff size={40} className="text-brand-200" />
+            <p className="text-sm font-semibold text-white">This one didn't load</p>
+            <p className="text-xs text-brand-200">Tap the arrow below for the next one</p>
+          </div>
+        )}
+        {imgStatus === 'loading' && (
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-brand-700/60 via-neutral-800/60 to-black/60" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/40" />
 
         <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
