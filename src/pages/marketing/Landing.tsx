@@ -4,6 +4,7 @@ import { LogoMark } from '@/components/ui/Spinner'
 import { Button } from '@/components/ui/Button'
 import { useTheme } from '@/contexts/ThemeContext'
 import { DecorativeFigure } from '@/components/shell/DecorativeFigure'
+import { FloatingArt } from '@/components/decor/FloatingArt'
 
 const communities = ['OWASP', 'GDGC', 'ACM', 'LFDT', 'IOT Club', 'Geeks For Geeks', 'AIMSA', 'ISR', 'NSS', 'Art Circle']
 
@@ -24,6 +25,8 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
+      <FloatingArt variant="home" />
+      <div className="relative z-10">
       <header className="sticky top-0 z-30 border-b border-neutral-100 dark:border-neutral-900 bg-white/80 dark:bg-neutral-950/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
           <div className="flex items-center gap-2">
@@ -155,6 +158,7 @@ export default function Landing() {
       <footer className="border-t border-neutral-100 dark:border-neutral-900 px-6 py-8 text-center text-sm text-neutral-400">
         © {new Date().getFullYear()} Cohort — A Social Platform for PCCOE. Not affiliated with PCCOE administration.
       </footer>
+      </div>
     </div>
   )
 }

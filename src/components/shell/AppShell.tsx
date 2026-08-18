@@ -5,20 +5,24 @@ import { RightSidebar } from './RightSidebar'
 import { CommandPalette } from './CommandPalette'
 import { BuddyWidget } from './BuddyWidget'
 import { useCommandPaletteShortcut } from './useCommandPaletteShortcut'
+import { FloatingArt } from '@/components/decor/FloatingArt'
 
 export function AppShell() {
   const [paletteOpen, setPaletteOpen] = useState(false)
   useCommandPaletteShortcut(() => setPaletteOpen(true))
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
-      <IconRail />
-      <main className="relative flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-4xl px-6 py-6">
-          <Outlet />
-        </div>
-      </main>
-      <RightSidebar onOpenPalette={() => setPaletteOpen(true)} />
+    <div className="h-screen w-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
+      <FloatingArt variant="dashboard" />
+      <div className="relative z-10 flex h-full w-full">
+        <IconRail />
+        <main className="relative flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-4xl px-6 py-6">
+            <Outlet />
+          </div>
+        </main>
+        <RightSidebar onOpenPalette={() => setPaletteOpen(true)} />
+      </div>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       <BuddyWidget />
     </div>
