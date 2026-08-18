@@ -11,8 +11,9 @@ export function IconRail() {
 
   return (
     <nav
-      onClick={() => setExpanded((e) => !e)}
-      className={`flex h-full shrink-0 cursor-pointer flex-col items-stretch gap-1 border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 py-4 transition-[width] duration-200 ease-out ${
+      onMouseEnter={() => setExpanded(true)}
+      onMouseLeave={() => setExpanded(false)}
+      className={`flex h-full shrink-0 flex-col items-stretch gap-1 border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 py-4 transition-[width] duration-200 ease-out ${
         expanded ? 'w-52' : 'w-16'
       }`}
     >

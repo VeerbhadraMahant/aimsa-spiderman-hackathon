@@ -365,9 +365,22 @@ export async function markMessageRead(messageId: string): Promise<void> {
 }
 
 // ---------- XD ----------
+function mapXdRow(row: Record<string, any>): XdItem {
+  return {
+    id: row.id,
+    tag: row.tag,
+    mediaUrl: row.media_url,
+    sourceUrl: row.source_url,
+    mediaType: row.media_type,
+    caption: row.caption ?? undefined,
+    likeCount: row.like_count ?? 0,
+    likedByMe: false,
+  }
+}
+
 export async function getXdItems(tag?: string): Promise<XdItem[]> {
   const items = isSupabaseConfigured && supabase
-    ? ((await supabase.from('xd_items').select('*')).data as XdItem[]) ?? []
+    ? ((await supabase.from('xd_items').select('*')).data ?? []).map(mapXdRow)
     : store.xdItems.all()
   return tag ? items.filter((i) => i.tag === tag) : items
 }
@@ -383,10 +396,23 @@ export async function toggleXdLike(itemId: string): Promise<void> {
 }
 
 // ---------- Notifications ----------
+function mapNotificationRow(row: Record<string, any>): AppNotification {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    type: row.type,
+    refId: row.ref_id ?? undefined,
+    title: row.title,
+    body: row.body,
+    createdAt: row.created_at,
+    readAt: row.read_at ?? undefined,
+  }
+}
+
 export async function getNotifications(userId: string): Promise<AppNotification[]> {
   if (isSupabaseConfigured && supabase) {
     const { data } = await supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false })
-    return (data as AppNotification[]) ?? []
+    return (data ?? []).map(mapNotificationRow)
   }
   return [...store.notifications.forUser(userId)].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
 }

@@ -12,16 +12,23 @@ export default function CampusMap() {
 
   useEffect(() => {
     if (!isTomTomConfigured || !mapRef.current) return
+    // React StrictMode double-invokes this effect in dev; without this guard
+    // the async init() below can construct two tt.map() instances racing on
+    // the same container (each appending its own canvas), leaving the map
+    // half-initialized with a style loaded but no tiles ever rendered.
+    let cancelled = false
     let map: any
     let markers: any[] = []
 
     async function init() {
       const tt = await import('@tomtom-international/web-sdk-maps')
+      if (cancelled || !mapRef.current) return
       map = tt.map({
         key: tomtomKey as string,
-        container: mapRef.current!,
+        container: mapRef.current,
         center: CAMPUS_CENTER,
         zoom: 16,
+        style: 'https://api.tomtom.com/style/1/style/22.2.1-*?map=2/basic_street-light&poi=2/poi_light',
       })
       map.addControl(new tt.NavigationControl())
 
@@ -41,11 +48,17 @@ export default function CampusMap() {
         const marker = new tt.Marker({ element: el }).setLngLat([poi.lng, poi.lat]).setPopup(popup).addTo(map)
         markers.push(marker)
       })
+      if (cancelled) {
+        markers.forEach((m) => m.remove())
+        map.remove()
+        return
+      }
       setReady(true)
     }
 
     init()
     return () => {
+      cancelled = true
       markers.forEach((m) => m.remove())
       map?.remove()
     }
