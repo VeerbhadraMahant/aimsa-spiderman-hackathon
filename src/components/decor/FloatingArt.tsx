@@ -41,7 +41,7 @@ function useJitter(count: number) {
       Array.from({ length: count }, () => ({
         dx: Math.round((Math.random() - 0.5) * 70), // -35..+35
         dy: Math.round((Math.random() - 0.5) * 70),
-        size: 22 + Math.round(Math.random() * 8), // 22..30px
+        size: 75, // 75x75 box; object-contain below preserves each image's aspect ratio inside it
         rotate: Math.round((Math.random() - 0.5) * 16), // -8..8deg
         duration: 5 + Math.random() * 3, // 5..8s bob cycle
         delay: Math.random() * -6, // negative = start mid-cycle, avoids synced bobbing

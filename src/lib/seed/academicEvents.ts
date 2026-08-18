@@ -1,17 +1,55 @@
 import type { AcademicEvent } from '@/types'
 
-function iso(y: number, m: number, d: number): string {
-  return new Date(y, m - 1, d).toISOString().slice(0, 10)
-}
-
-const now = new Date()
-const y = now.getFullYear()
-const m = now.getMonth() + 1
+// Source: Academic-Calendar-Sem-I-2026-27.pdf (PCCOE, Record No. ACAD/R/005,
+// Rev 00, dated 18/08/2023) — Semester 1 (Odd Semester), AY 2026-27, for SY,
+// TY, Final Year B.Tech., SY (WP), SY M.Tech., SY MCA and TY B.Voc.
+// Each multi-day activity is anchored on its start date; the description
+// carries the full date range from the PDF.
 
 export const seedAcademicEvents: AcademicEvent[] = [
-  { id: 'ev-1', title: 'Unit Test 1 begins', date: iso(y, m, 20), type: 'exam', description: 'Unit Test 1 for all branches begins.' },
-  { id: 'ev-2', title: 'Independence Day (observed)', date: iso(y, m, 15), type: 'holiday', description: 'College holiday.' },
-  { id: 'ev-3', title: 'Assignment 2 submission deadline', date: iso(y, m, 25), type: 'deadline', description: 'Submit via department portal before 11:59 PM.' },
-  { id: 'ev-4', title: 'GDGC DevFest Prep Meetup', date: iso(y, m, 28), type: 'event', description: 'Open meetup, Seminar Hall 2, 4 PM.' },
-  { id: 'ev-5', title: 'Semester exam form fill-up deadline', date: iso(y, m + 1 > 12 ? 1 : m + 1, 5), type: 'deadline', description: 'Complete exam form fill-up online.' },
+  { id: 'ev-1', title: 'Mentoring & Counselling (Electives, Honors/Minors)', date: '2026-06-11', type: 'event', description: '11-06-2026 to 16-06-2026' },
+  { id: 'ev-2', title: 'Course Registration', date: '2026-06-16', type: 'deadline', description: '16-06-2026 to 22-06-2026' },
+  { id: 'ev-3', title: 'Academic Coordinators Meeting', date: '2026-07-03', type: 'event', description: '03-07-2026' },
+  { id: 'ev-4', title: 'Course/Module Meetings, Academic Planning, PAC', date: '2026-07-02', type: 'deadline', description: 'Before 02-07-2026' },
+  { id: 'ev-5', title: 'PRN List & Time Table Published', date: '2026-07-02', type: 'deadline', description: 'Before 02-07-2026 — notice board and website' },
+  { id: 'ev-6', title: 'Student Communication: Commencement, PRN, Time Table', date: '2026-07-02', type: 'deadline', description: 'Before 02-07-2026 — notice board and website' },
+  { id: 'ev-7', title: 'Commencement of Teaching for Semester 1', date: '2026-07-06', type: 'event', description: '06-07-2026' },
+  { id: 'ev-8', title: 'HoD Address', date: '2026-07-07', type: 'event', description: '07-07-2026 to 11-07-2026' },
+  { id: 'ev-9', title: 'MDM Orientation and Registration', date: '2026-07-07', type: 'deadline', description: '07-07-2026 to 11-07-2026' },
+  { id: 'ev-10', title: 'Finalization of Formative Assessment Tools', date: '2026-07-11', type: 'deadline', description: 'Before 11-07-2026' },
+  { id: 'ev-11', title: 'Attendance Monitoring — I', date: '2026-07-25', type: 'event', description: '25-07-2026' },
+  { id: 'ev-12', title: 'Academic Coordinators Meeting', date: '2026-08-07', type: 'event', description: '07-08-2026' },
+  { id: 'ev-13', title: 'Display Registered Students List (Exam Section)', date: '2026-08-06', type: 'deadline', description: '06-08-2026' },
+  { id: 'ev-14', title: 'Formative Assessment 1 (FA1)', date: '2026-08-17', type: 'exam', description: 'Tentative — 17-08-2026 to 25-08-2026' },
+  { id: 'ev-15', title: 'Attendance/Academic Monitoring-II, Provisional Detention List-1', date: '2026-08-29', type: 'deadline', description: '29-08-2026' },
+  { id: 'ev-16', title: 'Academic Coordinators Meeting', date: '2026-09-04', type: 'event', description: '04-09-2026' },
+  { id: 'ev-17', title: 'Mid-term Work Submission / Mock Oral / PAC Review', date: '2026-09-07', type: 'deadline', description: '07-09-2026 to 12-09-2026 (not applicable for SY M.Tech.)' },
+  { id: 'ev-18', title: 'Parent Meet', date: '2026-09-17', type: 'event', description: '17-09-2026 to 24-09-2026' },
+  { id: 'ev-19', title: 'Attendance/Academic Monitoring-III, Provisional Detention List-2', date: '2026-10-03', type: 'deadline', description: '03-10-2026' },
+  { id: 'ev-20', title: 'Academic Coordinators Meeting', date: '2026-10-09', type: 'event', description: '09-10-2026' },
+  { id: 'ev-21', title: 'Formative Assessment 2 (FA2)', date: '2026-10-05', type: 'exam', description: 'Tentative — 05-10-2026 to 14-10-2026' },
+  { id: 'ev-22', title: 'Summative Assessment (SA) Question Paper Submission', date: '2026-10-23', type: 'deadline', description: '23-10-2026' },
+  { id: 'ev-23', title: 'End Term Submission, Mock Oral / Practical', date: '2026-10-22', type: 'exam', description: '22-10-2026 to 26-10-2026' },
+  { id: 'ev-24', title: 'Course End Survey', date: '2026-10-23', type: 'deadline', description: '23-10-2026 to 27-10-2026' },
+  { id: 'ev-25', title: 'End Semester Feedback', date: '2026-10-23', type: 'deadline', description: '23-10-2026 to 27-10-2026' },
+  { id: 'ev-26', title: 'Conclusion of Teaching', date: '2026-10-27', type: 'event', description: '27-10-2026' },
+  { id: 'ev-27', title: 'Detention List: HoD to Dean Office', date: '2026-10-28', type: 'deadline', description: '28-10-2026' },
+  { id: 'ev-28', title: 'Detention List: Admin Office to CoE', date: '2026-10-29', type: 'deadline', description: '29-10-2026' },
+  { id: 'ev-29', title: 'Practical / End Term Project / Seminar / Internship Oral (Slot I)', date: '2026-10-30', type: 'exam', description: '30-10-2026 to 04-11-2026' },
+  { id: 'ev-30', title: 'Academic Coordinators Meeting', date: '2026-11-06', type: 'event', description: '06-11-2026' },
+  { id: 'ev-31', title: 'Faculty Appreciation & Performance Appraisal', date: '2026-11-12', type: 'event', description: '12-11-2026 to 23-11-2026' },
+  { id: 'ev-32', title: 'Department PAC', date: '2026-11-12', type: 'event', description: '12-11-2026 to 23-11-2026' },
+  { id: 'ev-33', title: 'Summative Assessment Exam & Evaluation', date: '2026-11-16', type: 'exam', description: '16-11-2026 to 03-12-2026' },
+  { id: 'ev-34', title: 'Practical / End Term Project / Seminar / Internship Oral (Slot II)', date: '2026-12-04', type: 'exam', description: '04-12-2026 to 08-12-2026, if required' },
+  { id: 'ev-35', title: 'DUPC Meeting: Verification of FA/SA, Grades', date: '2026-12-04', type: 'event', description: '04-12-2026 to 08-12-2026' },
+  { id: 'ev-36', title: 'Last Day to Show Paper & Mark Entry in ERP', date: '2026-12-08', type: 'deadline', description: '08-12-2026' },
+  { id: 'ev-37', title: 'Assessed Answer Sheets & ERP Marks Submission to ACR/COE', date: '2026-12-09', type: 'deadline', description: '09-12-2026' },
+  { id: 'ev-38', title: 'Declaration of Result', date: '2026-12-11', type: 'event', description: '11-12-2026' },
+  { id: 'ev-39', title: 'Registration for Re-SA', date: '2026-12-11', type: 'deadline', description: '11-12-2026 to 13-12-2026' },
+  { id: 'ev-40', title: 'Re-practical Exam (Failed Students / Genuine Cases)', date: '2026-12-15', type: 'exam', description: '15-12-2026 to 16-12-2026' },
+  { id: 'ev-41', title: 'Re-SA Exams (Failed Students / Genuine Cases)', date: '2026-12-17', type: 'exam', description: '17-12-2026 to 28-12-2026' },
+  { id: 'ev-42', title: 'Last Day to Show Re-SA Paper & Mark Entry in ERP', date: '2026-12-30', type: 'deadline', description: '30-12-2026' },
+  { id: 'ev-43', title: 'Re-SA Answer Sheets & ERP Marks Submission to ACR/COE', date: '2026-12-31', type: 'deadline', description: '31-12-2026' },
+  { id: 'ev-44', title: 'Declaration of Result for Re-SA Exam', date: '2027-01-01', type: 'event', description: '01-01-2027' },
+  { id: 'ev-45', title: 'Commencement of Even Semester (2026-27)', date: '2027-01-04', type: 'event', description: '04-01-2027' },
 ]

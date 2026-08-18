@@ -24,6 +24,11 @@ create table if not exists public.users (
   created_at timestamptz not null default now()
 );
 
+-- Seeded/demo users (e.g. bulk fake accounts for populating Network/Communities
+-- during a demo) don't have a corresponding auth.users row, so this FK can't be
+-- enforced. Real accounts still get their `users` row via the trigger below.
+alter table public.users drop constraint if exists users_id_fkey;
+
 -- Auto-create a users row when someone signs in with Google for the first time.
 create or replace function public.handle_new_auth_user()
 returns trigger as $$
@@ -178,6 +183,29 @@ create table if not exists public.contact_messages (
   created_at timestamptz not null default now()
 );
 
+-- ---------- live site counter (landing page hero stat) ----------
+create table if not exists public.site_stats (
+  id text primary key,
+  count bigint not null default 0
+);
+insert into public.site_stats (id, count) values ('views', 11461) on conflict (id) do nothing;
+
+create or replace function public.increment_site_views()
+returns bigint
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  new_count bigint;
+begin
+  update public.site_stats set count = count + 1 where id = 'views' returning count into new_count;
+  return new_count;
+end;
+$$;
+
+grant execute on function public.increment_site_views() to anon, authenticated;
+
 -- ======================================================================
 -- Row Level Security
 -- ======================================================================
@@ -197,6 +225,7 @@ alter table public.map_pois enable row level security;
 alter table public.academic_events enable row level security;
 alter table public.notifications enable row level security;
 alter table public.contact_messages enable row level security;
+alter table public.site_stats enable row level security;
 
 -- Public read access for shared/reference data.
 create policy "public read users" on public.users for select using (true);
@@ -210,6 +239,7 @@ create policy "public read xd_items" on public.xd_items for select using (true);
 create policy "public read xd_likes" on public.xd_likes for select using (true);
 create policy "public read map_pois" on public.map_pois for select using (true);
 create policy "public read academic_events" on public.academic_events for select using (true);
+create policy "public read site_stats" on public.site_stats for select using (true);
 
 -- Users can only write their own rows.
 create policy "users update own row" on public.users for update using (auth.uid() = id);
@@ -253,3 +283,4 @@ create policy "insert own contact message" on public.contact_messages for insert
 alter publication supabase_realtime add table public.messages;
 alter publication supabase_realtime add table public.posts;
 alter publication supabase_realtime add table public.notifications;
+alter publication supabase_realtime add table public.site_stats;
