@@ -1,0 +1,2589 @@
+## Integrate the <SpotlightCard /> component from React Bits
+
+You are helping integrate an open-source React component into an existing application.
+
+### Component: SpotlightCard
+### Variant: JavaScript + CSS
+
+
+---
+
+### Usage Example
+```jsx
+import SpotlightCard from './SpotlightCard';
+  
+<SpotlightCard className="custom-spotlight-card" spotlightColor="rgba(0, 229, 255, 0.2)">
+  // Content goes here
+</SpotlightCard>
+```
+
+### Props
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| spotlightColor | string | rgba(255, 255, 255, 0.25) | Controls the color of the radial gradient used for the spotlight effect. |
+| className | string | — | Allows adding custom classes to the component. |
+
+### Full Component Source
+```jsx
+import { useRef } from 'react';
+import './SpotlightCard.css';
+
+const SpotlightCard = ({ children, className = '', spotlightColor = 'rgba(255, 255, 255, 0.25)' }) => {
+  const divRef = useRef(null);
+
+  const handleMouseMove = e => {
+    const rect = divRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    divRef.current.style.setProperty('--mouse-x', `${x}px`);
+    divRef.current.style.setProperty('--mouse-y', `${y}px`);
+    divRef.current.style.setProperty('--spotlight-color', spotlightColor);
+  };
+
+  return (
+    <div ref={divRef} onMouseMove={handleMouseMove} className={`card-spotlight ${className}`}>
+      {children}
+    </div>
+  );
+};
+
+export default SpotlightCard;
+
+```
+
+### Component CSS
+```css
+.card-spotlight {
+  position: relative;
+  border-radius: 1.5rem;
+  border: 1px solid #222;
+  background-color: #111;
+  padding: 2rem;
+  overflow: hidden;
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  --spotlight-color: rgba(255, 255, 255, 0.05);
+}
+
+.card-spotlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), var(--spotlight-color), transparent 80%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.card-spotlight:hover::before,
+.card-spotlight:focus-within::before {
+  opacity: 0.6;
+}
+
+```
+
+### Integration Instructions
+1. Install any listed dependencies.
+2. Copy the component source into the appropriate directory in the project.
+3. Import the CSS file alongside the component.
+4. Import and render the component using the usage example above as a starting point.
+5. Adjust props as needed for the specific use case — refer to the props table for all available options.
+
+### More from React Bits
+The full library index, including everything reactbits.dev offers, is at https://reactbits.dev/llms.txt — fetch it if this component is not the right fit or the project needs more pieces.
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Integrate the <CurvedLoop /> component from React Bits
+
+You are helping integrate an open-source React component into an existing application.
+
+### Component: CurvedLoop
+### Variant: JavaScript + CSS
+
+
+---
+
+### Usage Example
+```jsx
+import CurvedLoop from './CurvedLoop';
+
+// Basic usage
+<CurvedLoop marqueeText="Welcome to React Bits ✦" />
+
+// With custom props
+<CurvedLoop 
+  marqueeText="Be ✦ Creative ✦ With ✦ React ✦ Bits ✦"
+  speed={3}
+  curveAmount={500}
+  direction="right"
+  interactive={true}
+  className="custom-text-style"
+/>
+
+// Non-interactive with slower speed
+<CurvedLoop 
+  marqueeText="Smooth Curved Animation"
+  speed={1}
+  curveAmount={300}
+  interactive={false}
+/>
+```
+
+### Props
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| marqueeText | string | "" | The text to display in the curved marquee |
+| speed | number | 2 | Animation speed of the marquee text |
+| className | string | undefined | CSS class name for styling the text |
+| curveAmount | number | 400 | Amount of curve in the text path |
+| direction | "left" | "right" | "left" | Initial direction of the marquee animation |
+| interactive | boolean | true | Whether the marquee can be dragged by the user |
+
+### Full Component Source
+```jsx
+import { useRef, useEffect, useState, useMemo, useId } from 'react';
+import './CurvedLoop.css';
+
+const CurvedLoop = ({
+  marqueeText = '',
+  speed = 2,
+  className,
+  curveAmount = 400,
+  direction = 'left',
+  interactive = true
+}) => {
+  const text = useMemo(() => {
+    const hasTrailing = /\s|\u00A0$/.test(marqueeText);
+    return (hasTrailing ? marqueeText.replace(/\s+$/, '') : marqueeText) + '\u00A0';
+  }, [marqueeText]);
+
+  const measureRef = useRef(null);
+  const textPathRef = useRef(null);
+  const pathRef = useRef(null);
+  const [spacing, setSpacing] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const uid = useId();
+  const pathId = `curve-${uid}`;
+  const pathD = `M-100,40 Q500,${40 + curveAmount} 1540,40`;
+
+  const dragRef = useRef(false);
+  const lastXRef = useRef(0);
+  const dirRef = useRef(direction);
+  const velRef = useRef(0);
+
+  const textLength = spacing;
+  const totalText = textLength
+    ? Array(Math.ceil(1800 / textLength) + 2)
+        .fill(text)
+        .join('')
+    : text;
+  const ready = spacing > 0;
+
+  useEffect(() => {
+    if (measureRef.current) setSpacing(measureRef.current.getComputedTextLength());
+  }, [text, className]);
+
+  useEffect(() => {
+    if (!spacing) return;
+    if (textPathRef.current) {
+      const initial = -spacing;
+      textPathRef.current.setAttribute('startOffset', initial + 'px');
+      setOffset(initial);
+    }
+  }, [spacing]);
+
+  useEffect(() => {
+    if (!spacing || !ready) return;
+    let frame = 0;
+    const step = () => {
+      if (!dragRef.current && textPathRef.current) {
+        const delta = dirRef.current === 'right' ? speed : -speed;
+        const currentOffset = parseFloat(textPathRef.current.getAttribute('startOffset') || '0');
+        let newOffset = currentOffset + delta;
+
+        const wrapPoint = spacing;
+        if (newOffset <= -wrapPoint) newOffset += wrapPoint;
+        if (newOffset > 0) newOffset -= wrapPoint;
+
+        textPathRef.current.setAttribute('startOffset', newOffset + 'px');
+        setOffset(newOffset);
+      }
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [spacing, speed, ready]);
+
+  const onPointerDown = e => {
+    if (!interactive) return;
+    dragRef.current = true;
+    lastXRef.current = e.clientX;
+    velRef.current = 0;
+    e.target.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = e => {
+    if (!interactive || !dragRef.current || !textPathRef.current) return;
+    const dx = e.clientX - lastXRef.current;
+    lastXRef.current = e.clientX;
+    velRef.current = dx;
+
+    const currentOffset = parseFloat(textPathRef.current.getAttribute('startOffset') || '0');
+    let newOffset = currentOffset + dx;
+
+    const wrapPoint = spacing;
+    if (newOffset <= -wrapPoint) newOffset += wrapPoint;
+    if (newOffset > 0) newOffset -= wrapPoint;
+
+    textPathRef.current.setAttribute('startOffset', newOffset + 'px');
+    setOffset(newOffset);
+  };
+
+  const endDrag = () => {
+    if (!interactive) return;
+    dragRef.current = false;
+    dirRef.current = velRef.current > 0 ? 'right' : 'left';
+  };
+
+  const cursorStyle = interactive ? (dragRef.current ? 'grabbing' : 'grab') : 'auto';
+
+  return (
+    <div
+      className="curved-loop-jacket"
+      style={{ visibility: ready ? 'visible' : 'hidden', cursor: cursorStyle }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerLeave={endDrag}
+    >
+      <svg className="curved-loop-svg" viewBox="0 0 1440 120">
+        <text ref={measureRef} xmlSpace="preserve" style={{ visibility: 'hidden', opacity: 0, pointerEvents: 'none' }}>
+          {text}
+        </text>
+        <defs>
+          <path ref={pathRef} id={pathId} d={pathD} fill="none" stroke="transparent" />
+        </defs>
+        {ready && (
+          <text fontWeight="bold" xmlSpace="preserve" className={className}>
+            <textPath ref={textPathRef} href={`#${pathId}`} startOffset={offset + 'px'} xmlSpace="preserve">
+              {totalText}
+            </textPath>
+          </text>
+        )}
+      </svg>
+    </div>
+  );
+};
+
+export default CurvedLoop;
+
+```
+
+### Component CSS
+```css
+.curved-loop-jacket {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.curved-loop-svg {
+  user-select: none;
+  width: 100%;
+  aspect-ratio: 100 / 12;
+  overflow: visible;
+  display: block;
+  font-size: 6rem;
+  fill: #ffffff;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+```
+
+### Integration Instructions
+1. Install any listed dependencies.
+2. Copy the component source into the appropriate directory in the project.
+3. Import the CSS file alongside the component.
+4. Import and render the component using the usage example above as a starting point.
+5. Adjust props as needed for the specific use case — refer to the props table for all available options.
+
+### More from React Bits
+The full library index, including everything reactbits.dev offers, is at https://reactbits.dev/llms.txt — fetch it if this component is not the right fit or the project needs more pieces.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Integrate the <GradientText /> component from React Bits
+
+You are helping integrate an open-source React component into an existing application.
+
+### Component: GradientText
+### Variant: JavaScript + CSS
+
+
+---
+
+### Usage Example
+```jsx
+import GradientText from './GradientText'
+
+// For a smoother animation, the gradient should start and end with the same color
+  
+<GradientText
+  colors={["#40ffaa", "#4079ff", "#40ffaa", "#4079ff", "#40ffaa"]}
+  animationSpeed={3}
+  showBorder={false}
+  className="custom-class"
+>
+  Add a splash of color!
+</GradientText>
+```
+
+### Props
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| children | ReactNode | - | The content to be displayed inside the gradient text. |
+| className | string | '' | Adds custom classes to the root element for additional styling. |
+| colors | string[] | ["#5227FF", "#FF9FFC", "#B497CF"] | Array of colors for the gradient effect. |
+| animationSpeed | number | 8 | Duration of one animation cycle in seconds. |
+| direction | 'horizontal' | 'vertical' | 'diagonal' | 'horizontal' | Direction of the gradient animation. |
+| pauseOnHover | boolean | false | Pauses the animation when hovering over the text. |
+| yoyo | boolean | true | Reverses animation direction at the end instead of looping. |
+| showBorder | boolean | false | Displays a gradient border around the text. |
+
+### Full Component Source
+```jsx
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { motion, useMotionValue, useAnimationFrame, useTransform } from 'motion/react';
+import './GradientText.css';
+
+export default function GradientText({
+  children,
+  className = '',
+  colors = ['#5227FF', '#FF9FFC', '#B497CF'],
+  animationSpeed = 8,
+  showBorder = false,
+  direction = 'horizontal',
+  pauseOnHover = false,
+  yoyo = true
+}) {
+  const [isPaused, setIsPaused] = useState(false);
+  const progress = useMotionValue(0);
+  const elapsedRef = useRef(0);
+  const lastTimeRef = useRef(null);
+
+  const animationDuration = animationSpeed * 1000;
+
+  useAnimationFrame(time => {
+    if (isPaused) {
+      lastTimeRef.current = null;
+      return;
+    }
+
+    if (lastTimeRef.current === null) {
+      lastTimeRef.current = time;
+      return;
+    }
+
+    const deltaTime = time - lastTimeRef.current;
+    lastTimeRef.current = time;
+    elapsedRef.current += deltaTime;
+
+    if (yoyo) {
+      const fullCycle = animationDuration * 2;
+      const cycleTime = elapsedRef.current % fullCycle;
+
+      if (cycleTime < animationDuration) {
+        progress.set((cycleTime / animationDuration) * 100);
+      } else {
+        progress.set(100 - ((cycleTime - animationDuration) / animationDuration) * 100);
+      }
+    } else {
+      // Continuously increase position for seamless looping
+      progress.set((elapsedRef.current / animationDuration) * 100);
+    }
+  });
+
+  useEffect(() => {
+    elapsedRef.current = 0;
+    progress.set(0);
+  }, [animationSpeed, progress, yoyo]);
+
+  const backgroundPosition = useTransform(progress, p => {
+    if (direction === 'horizontal') {
+      return `${p}% 50%`;
+    } else if (direction === 'vertical') {
+      return `50% ${p}%`;
+    } else {
+      // For diagonal, move only horizontally to avoid interference patterns
+      return `${p}% 50%`;
+    }
+  });
+
+  const handleMouseEnter = useCallback(() => {
+    if (pauseOnHover) setIsPaused(true);
+  }, [pauseOnHover]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (pauseOnHover) setIsPaused(false);
+  }, [pauseOnHover]);
+
+  const gradientAngle =
+    direction === 'horizontal' ? 'to right' : direction === 'vertical' ? 'to bottom' : 'to bottom right';
+  // Duplicate first color at the end for seamless looping
+  const gradientColors = [...colors, colors[0]].join(', ');
+
+  const gradientStyle = {
+    backgroundImage: `linear-gradient(${gradientAngle}, ${gradientColors})`,
+    backgroundSize: direction === 'horizontal' ? '300% 100%' : direction === 'vertical' ? '100% 300%' : '300% 300%',
+    backgroundRepeat: 'repeat'
+  };
+
+  return (
+    <motion.div
+      className={`animated-gradient-text ${showBorder ? 'with-border' : ''} ${className}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {showBorder && <motion.div className="gradient-overlay" style={{ ...gradientStyle, backgroundPosition }} />}
+      <motion.div className="text-content" style={{ ...gradientStyle, backgroundPosition }}>
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+```
+
+### Component CSS
+```css
+.animated-gradient-text {
+  position: relative;
+  margin: 0 auto;
+  display: flex;
+  max-width: fit-content;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1.25rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  transition: box-shadow 0.5s ease-out;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.animated-gradient-text.with-border {
+  padding: 0.35rem 0.75rem;
+}
+
+.gradient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.gradient-overlay::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: inherit;
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #120F17;
+  z-index: -1;
+}
+
+.text-content {
+  display: inline-block;
+  position: relative;
+  z-index: 2;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+```
+
+### Integration Instructions
+1. Install any listed dependencies.
+2. Copy the component source into the appropriate directory in the project.
+3. Import the CSS file alongside the component.
+4. Import and render the component using the usage example above as a starting point.
+5. Adjust props as needed for the specific use case — refer to the props table for all available options.
+
+### More from React Bits
+The full library index, including everything reactbits.dev offers, is at https://reactbits.dev/llms.txt — fetch it if this component is not the right fit or the project needs more pieces.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Integrate the <LogoLoop /> component from React Bits
+
+You are helping integrate an open-source React component into an existing application.
+
+### Component: LogoLoop
+### Variant: JavaScript + CSS
+
+
+---
+
+### Usage Example
+```jsx
+import LogoLoop from './LogoLoop';
+import { SiReact, SiNextdotjs, SiTypescript, SiTailwindcss } from 'react-icons/si';
+
+const techLogos = [
+  { node: <SiReact />, title: "React", href: "https://react.dev" },
+  { node: <SiNextdotjs />, title: "Next.js", href: "https://nextjs.org" },
+  { node: <SiTypescript />, title: "TypeScript", href: "https://www.typescriptlang.org" },
+  { node: <SiTailwindcss />, title: "Tailwind CSS", href: "https://tailwindcss.com" },
+];
+
+// Alternative with image sources
+const imageLogos = [
+  { src: "/logos/company1.png", alt: "Company 1", href: "https://company1.com" },
+  { src: "/logos/company2.png", alt: "Company 2", href: "https://company2.com" },
+  { src: "/logos/company3.png", alt: "Company 3", href: "https://company3.com" },
+];
+
+function App() {
+  return (
+    <div style={{ height: '200px', position: 'relative', overflow: 'hidden'}}>
+      {/* Basic horizontal loop */}
+      <LogoLoop
+        logos={techLogos}
+        speed={120}
+        direction="left"
+        logoHeight={48}
+        gap={40}
+        hoverSpeed={0}
+        scaleOnHover
+        fadeOut
+        fadeOutColor="#ffffff"
+        ariaLabel="Technology partners"
+      />
+      
+      {/* Vertical loop with deceleration on hover */}
+      <LogoLoop
+        logos={techLogos}
+        speed={80}
+        direction="up"
+        logoHeight={48}
+        gap={40}
+        hoverSpeed={20}
+        fadeOut
+      />
+    </div>
+  );
+}
+```
+
+### Props
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| logos | LogoItem[] | required | Array of logo items to display. Each item can be either a React node or an image src. |
+| speed | number | 120 | Animation speed in pixels per second. Positive values move based on direction, negative values reverse direction. |
+| direction | 'left' | 'right' | 'up' | 'down' | 'left' | Direction of the logo animation loop. Supports horizontal (left/right) and vertical (up/down) scrolling. |
+| width | number | string | '100%' | Width of the logo loop container. |
+| logoHeight | number | 28 | Height of the logos in pixels. |
+| gap | number | 32 | Gap between logos in pixels. |
+| hoverSpeed | number | undefined | 0 | Speed when hovering over the component. Set to 0 to pause, or a lower value for deceleration effect. |
+| fadeOut | boolean | false | Whether to apply fade-out effect at the edges of the container. |
+| fadeOutColor | string | undefined | Color used for the fade-out effect. Only applies when fadeOut is true. |
+| scaleOnHover | boolean | false | Whether to scale logos on hover. |
+| renderItem | (item: LogoItem, key: React.Key) => React.ReactNode | undefined | Custom render function for each logo item. Allows full control over item rendering for animations, tooltips, etc. |
+| ariaLabel | string | 'Partner logos' | Accessibility label for the logo loop component. |
+| className | string | undefined | Additional CSS class names to apply to the root element. |
+| style | React.CSSProperties | undefined | Inline styles to apply to the root element. |
+
+### Full Component Source
+```jsx
+import { useCallback, useEffect, useMemo, useRef, useState, memo } from 'react';
+import './LogoLoop.css';
+
+const ANIMATION_CONFIG = { SMOOTH_TAU: 0.25, MIN_COPIES: 2, COPY_HEADROOM: 2 };
+
+const toCssLength = value => (typeof value === 'number' ? `${value}px` : (value ?? undefined));
+
+const useResizeObserver = (callback, elements, dependencies) => {
+  useEffect(() => {
+    if (!window.ResizeObserver) {
+      const handleResize = () => callback();
+      window.addEventListener('resize', handleResize);
+      callback();
+      return () => window.removeEventListener('resize', handleResize);
+    }
+    const observers = elements.map(ref => {
+      if (!ref.current) return null;
+      const observer = new ResizeObserver(callback);
+      observer.observe(ref.current);
+      return observer;
+    });
+    callback();
+    return () => {
+      observers.forEach(observer => observer?.disconnect());
+    };
+  }, [callback, elements, dependencies]);
+};
+
+const useImageLoader = (seqRef, onLoad, dependencies) => {
+  useEffect(() => {
+    const images = seqRef.current?.querySelectorAll('img') ?? [];
+    if (images.length === 0) {
+      onLoad();
+      return;
+    }
+    let remainingImages = images.length;
+    const handleImageLoad = () => {
+      remainingImages -= 1;
+      if (remainingImages === 0) onLoad();
+    };
+    images.forEach(img => {
+      const htmlImg = img;
+      if (htmlImg.complete) {
+        handleImageLoad();
+      } else {
+        htmlImg.addEventListener('load', handleImageLoad, { once: true });
+        htmlImg.addEventListener('error', handleImageLoad, { once: true });
+      }
+    });
+    return () => {
+      images.forEach(img => {
+        img.removeEventListener('load', handleImageLoad);
+        img.removeEventListener('error', handleImageLoad);
+      });
+    };
+  }, [onLoad, seqRef, dependencies]);
+};
+
+const useAnimationLoop = (trackRef, targetVelocity, seqWidth, seqHeight, isHovered, hoverSpeed, isVertical) => {
+  const rafRef = useRef(null);
+  const lastTimestampRef = useRef(null);
+  const offsetRef = useRef(0);
+  const velocityRef = useRef(0);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const seqSize = isVertical ? seqHeight : seqWidth;
+
+    if (seqSize > 0) {
+      offsetRef.current = ((offsetRef.current % seqSize) + seqSize) % seqSize;
+      const transformValue = isVertical
+        ? `translate3d(0, ${-offsetRef.current}px, 0)`
+        : `translate3d(${-offsetRef.current}px, 0, 0)`;
+      track.style.transform = transformValue;
+    }
+
+    const animate = timestamp => {
+      if (lastTimestampRef.current === null) {
+        lastTimestampRef.current = timestamp;
+      }
+
+      const deltaTime = Math.max(0, timestamp - lastTimestampRef.current) / 1000;
+      lastTimestampRef.current = timestamp;
+
+      const target = isHovered && hoverSpeed !== undefined ? hoverSpeed : targetVelocity;
+
+      const easingFactor = 1 - Math.exp(-deltaTime / ANIMATION_CONFIG.SMOOTH_TAU);
+      velocityRef.current += (target - velocityRef.current) * easingFactor;
+
+      if (seqSize > 0) {
+        let nextOffset = offsetRef.current + velocityRef.current * deltaTime;
+        nextOffset = ((nextOffset % seqSize) + seqSize) % seqSize;
+        offsetRef.current = nextOffset;
+
+        const transformValue = isVertical
+          ? `translate3d(0, ${-offsetRef.current}px, 0)`
+          : `translate3d(${-offsetRef.current}px, 0, 0)`;
+        track.style.transform = transformValue;
+      }
+
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      lastTimestampRef.current = null;
+    };
+  }, [targetVelocity, seqWidth, seqHeight, isHovered, hoverSpeed, isVertical, trackRef]);
+};
+
+export const LogoLoop = memo(
+  ({
+    logos,
+    speed = 120,
+    direction = 'left',
+    width = '100%',
+    logoHeight = 28,
+    gap = 32,
+    pauseOnHover,
+    hoverSpeed,
+    fadeOut = false,
+    fadeOutColor,
+    scaleOnHover = false,
+    renderItem,
+    ariaLabel = 'Partner logos',
+    className,
+    style
+  }) => {
+    const containerRef = useRef(null);
+    const trackRef = useRef(null);
+    const seqRef = useRef(null);
+
+    const [seqWidth, setSeqWidth] = useState(0);
+    const [seqHeight, setSeqHeight] = useState(0);
+    const [copyCount, setCopyCount] = useState(ANIMATION_CONFIG.MIN_COPIES);
+    const [isHovered, setIsHovered] = useState(false);
+
+    const effectiveHoverSpeed = useMemo(() => {
+      if (hoverSpeed !== undefined) return hoverSpeed;
+      if (pauseOnHover === true) return 0;
+      if (pauseOnHover === false) return undefined;
+      return 0;
+    }, [hoverSpeed, pauseOnHover]);
+
+    const isVertical = direction === 'up' || direction === 'down';
+
+    const targetVelocity = useMemo(() => {
+      const magnitude = Math.abs(speed);
+      let directionMultiplier;
+      if (isVertical) {
+        directionMultiplier = direction === 'up' ? 1 : -1;
+      } else {
+        directionMultiplier = direction === 'left' ? 1 : -1;
+      }
+      const speedMultiplier = speed < 0 ? -1 : 1;
+      return magnitude * directionMultiplier * speedMultiplier;
+    }, [speed, direction, isVertical]);
+
+    const updateDimensions = useCallback(() => {
+      const containerWidth = containerRef.current?.clientWidth ?? 0;
+      const sequenceRect = seqRef.current?.getBoundingClientRect?.();
+      const sequenceWidth = sequenceRect?.width ?? 0;
+      const sequenceHeight = sequenceRect?.height ?? 0;
+      if (isVertical) {
+        const parentHeight = containerRef.current?.parentElement?.clientHeight ?? 0;
+        if (containerRef.current && parentHeight > 0) {
+          const targetHeight = Math.ceil(parentHeight);
+          if (containerRef.current.style.height !== `${targetHeight}px`)
+            containerRef.current.style.height = `${targetHeight}px`;
+        }
+        if (sequenceHeight > 0) {
+          setSeqHeight(Math.ceil(sequenceHeight));
+          const viewport = containerRef.current?.clientHeight ?? parentHeight ?? sequenceHeight;
+          const copiesNeeded = Math.ceil(viewport / sequenceHeight) + ANIMATION_CONFIG.COPY_HEADROOM;
+          setCopyCount(Math.max(ANIMATION_CONFIG.MIN_COPIES, copiesNeeded));
+        }
+      } else if (sequenceWidth > 0) {
+        setSeqWidth(Math.ceil(sequenceWidth));
+        const copiesNeeded = Math.ceil(containerWidth / sequenceWidth) + ANIMATION_CONFIG.COPY_HEADROOM;
+        setCopyCount(Math.max(ANIMATION_CONFIG.MIN_COPIES, copiesNeeded));
+      }
+    }, [isVertical]);
+
+    useResizeObserver(updateDimensions, [containerRef, seqRef], [logos, gap, logoHeight, isVertical]);
+
+    useImageLoader(seqRef, updateDimensions, [logos, gap, logoHeight, isVertical]);
+
+    useAnimationLoop(trackRef, targetVelocity, seqWidth, seqHeight, isHovered, effectiveHoverSpeed, isVertical);
+
+    const cssVariables = useMemo(
+      () => ({
+        '--logoloop-gap': `${gap}px`,
+        '--logoloop-logoHeight': `${logoHeight}px`,
+        ...(fadeOutColor && { '--logoloop-fadeColor': fadeOutColor })
+      }),
+      [gap, logoHeight, fadeOutColor]
+    );
+
+    const rootClassName = useMemo(
+      () =>
+        [
+          'logoloop',
+          isVertical ? 'logoloop--vertical' : 'logoloop--horizontal',
+          fadeOut && 'logoloop--fade',
+          scaleOnHover && 'logoloop--scale-hover',
+          className
+        ]
+          .filter(Boolean)
+          .join(' '),
+      [isVertical, fadeOut, scaleOnHover, className]
+    );
+
+    const handleMouseEnter = useCallback(() => {
+      if (effectiveHoverSpeed !== undefined) setIsHovered(true);
+    }, [effectiveHoverSpeed]);
+    const handleMouseLeave = useCallback(() => {
+      if (effectiveHoverSpeed !== undefined) setIsHovered(false);
+    }, [effectiveHoverSpeed]);
+
+    const renderLogoItem = useCallback(
+      (item, key) => {
+        if (renderItem) {
+          return (
+            <li className="logoloop__item" key={key} role="listitem">
+              {renderItem(item, key)}
+            </li>
+          );
+        }
+        const isNodeItem = 'node' in item;
+        const content = isNodeItem ? (
+          <span className="logoloop__node" aria-hidden={!!item.href && !item.ariaLabel}>
+            {item.node}
+          </span>
+        ) : (
+          <img
+            src={item.src}
+            srcSet={item.srcSet}
+            sizes={item.sizes}
+            width={item.width}
+            height={item.height}
+            alt={item.alt ?? ''}
+            title={item.title}
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+          />
+        );
+        const itemAriaLabel = isNodeItem ? (item.ariaLabel ?? item.title) : (item.alt ?? item.title);
+        const itemContent = item.href ? (
+          <a
+            className="logoloop__link"
+            href={item.href}
+            aria-label={itemAriaLabel || 'logo link'}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            {content}
+          </a>
+        ) : (
+          content
+        );
+        return (
+          <li className="logoloop__item" key={key} role="listitem">
+            {itemContent}
+          </li>
+        );
+      },
+      [renderItem]
+    );
+
+    const logoLists = useMemo(
+      () =>
+        Array.from({ length: copyCount }, (_, copyIndex) => (
+          <ul
+            className="logoloop__list"
+            key={`copy-${copyIndex}`}
+            role="list"
+            aria-hidden={copyIndex > 0}
+            ref={copyIndex === 0 ? seqRef : undefined}
+          >
+            {logos.map((item, itemIndex) => renderLogoItem(item, `${copyIndex}-${itemIndex}`))}
+          </ul>
+        )),
+      [copyCount, logos, renderLogoItem]
+    );
+
+    const containerStyle = useMemo(
+      () => ({
+        width: isVertical
+          ? toCssLength(width) === '100%'
+            ? undefined
+            : toCssLength(width)
+          : (toCssLength(width) ?? '100%'),
+        ...cssVariables,
+        ...style
+      }),
+      [width, cssVariables, style, isVertical]
+    );
+
+    return (
+      <div ref={containerRef} className={rootClassName} style={containerStyle} role="region" aria-label={ariaLabel}>
+        <div className="logoloop__track" ref={trackRef} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+          {logoLists}
+        </div>
+      </div>
+    );
+  }
+);
+
+LogoLoop.displayName = 'LogoLoop';
+
+export default LogoLoop;
+
+```
+
+### Component CSS
+```css
+.logoloop {
+  position: relative;
+
+  --logoloop-gap: 32px;
+  --logoloop-logoHeight: 28px;
+  --logoloop-fadeColorAuto: #ffffff;
+}
+
+.logoloop--vertical {
+  height: 100%;
+  display: inline-block;
+}
+
+.logoloop--scale-hover {
+  padding-top: calc(var(--logoloop-logoHeight) * 0.1);
+  padding-bottom: calc(var(--logoloop-logoHeight) * 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .logoloop {
+    --logoloop-fadeColorAuto: #0b0b0b;
+  }
+}
+
+.logoloop__track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  user-select: none;
+  position: relative;
+  z-index: 0;
+}
+
+.logoloop--vertical .logoloop__track {
+  flex-direction: column;
+  height: max-content;
+  width: 100%;
+}
+
+.logoloop__list {
+  display: flex;
+  align-items: center;
+}
+
+.logoloop--vertical .logoloop__list {
+  flex-direction: column;
+}
+
+.logoloop__item {
+  flex: 0 0 auto;
+  margin-right: var(--logoloop-gap);
+  font-size: var(--logoloop-logoHeight);
+  line-height: 1;
+}
+
+.logoloop--vertical .logoloop__item {
+  margin-right: 0;
+  margin-bottom: var(--logoloop-gap);
+}
+
+.logoloop__item:last-child {
+  margin-right: var(--logoloop-gap);
+}
+
+.logoloop--vertical .logoloop__item:last-child {
+  margin-right: 0;
+  margin-bottom: var(--logoloop-gap);
+}
+
+.logoloop__node {
+  display: inline-flex;
+  align-items: center;
+}
+
+.logoloop__item img {
+  height: var(--logoloop-logoHeight);
+  width: auto;
+  display: block;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logoloop--scale-hover .logoloop__item {
+  overflow: visible;
+}
+
+.logoloop--scale-hover .logoloop__item:hover img,
+.logoloop--scale-hover .logoloop__item:hover .logoloop__node {
+  transform: scale(1.2);
+  transform-origin: center center;
+}
+
+.logoloop--scale-hover .logoloop__node {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logoloop__link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: opacity 0.2s ease;
+}
+
+.logoloop__link:hover {
+  opacity: 0.8;
+}
+
+.logoloop__link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.logoloop--fade::before,
+.logoloop--fade::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: clamp(24px, 8%, 120px);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.logoloop--fade::before {
+  left: 0;
+  background: linear-gradient(
+    to right,
+    var(--logoloop-fadeColor, var(--logoloop-fadeColorAuto)) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.logoloop--fade::after {
+  right: 0;
+  background: linear-gradient(
+    to left,
+    var(--logoloop-fadeColor, var(--logoloop-fadeColorAuto)) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.logoloop--vertical.logoloop--fade::before,
+.logoloop--vertical.logoloop--fade::after {
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: clamp(24px, 8%, 120px);
+}
+
+.logoloop--vertical.logoloop--fade::before {
+  top: 0;
+  bottom: auto;
+  background: linear-gradient(
+    to bottom,
+    var(--logoloop-fadeColor, var(--logoloop-fadeColorAuto)) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.logoloop--vertical.logoloop--fade::after {
+  bottom: 0;
+  top: auto;
+  background: linear-gradient(
+    to top,
+    var(--logoloop-fadeColor, var(--logoloop-fadeColorAuto)) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logoloop__track {
+    transform: translate3d(0, 0, 0) !important;
+  }
+
+  .logoloop__item img,
+  .logoloop__node {
+    transition: none !important;
+  }
+}
+
+```
+
+### Integration Instructions
+1. Install any listed dependencies.
+2. Copy the component source into the appropriate directory in the project.
+3. Import the CSS file alongside the component.
+4. Import and render the component using the usage example above as a starting point.
+5. Adjust props as needed for the specific use case — refer to the props table for all available options.
+
+### More from React Bits
+The full library index, including everything reactbits.dev offers, is at https://reactbits.dev/llms.txt — fetch it if this component is not the right fit or the project needs more pieces.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Integrate the <LiquidEther /> component from React Bits
+
+You are helping integrate an open-source React component into an existing application.
+
+### Component: LiquidEther
+### Variant: JavaScript + CSS
+### Dependencies: three
+
+---
+
+### Usage Example
+```jsx
+import LiquidEther from './LiquidEther';
+
+<div style={{ width: '100%', height: 600, position: 'relative' }}>
+  <LiquidEther
+    colors={[ '#5227FF', '#FF9FFC', '#B497CF' ]}
+    mouseForce={20}
+    cursorSize={100}
+    isViscous={false}
+    viscous={30}
+    iterationsViscous={32}
+    iterationsPoisson={32}
+    resolution={0.5}
+    isBounce={false}
+    autoDemo={true}
+    autoSpeed={0.5}
+    autoIntensity={2.2}
+    takeoverDuration={0.25}
+    autoResumeDelay={3000}
+    autoRampDuration={0.6}
+  />
+</div>
+```
+
+### Props
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| colors | string[] | ["#5227FF", "#FF9FFC", "#B497CF"] | Array of hex color stops used to build the velocity-to-color palette. |
+| mouseForce | number | 20 | Strength multiplier applied to mouse / touch movement when injecting velocity. |
+| cursorSize | number | 100 | Radius (in pixels at base resolution) of the force brush. |
+| resolution | number | 0.5 | Simulation texture scale relative to canvas size (lower = better performance, more blur). |
+| dt | number | 0.014 | Fixed simulation timestep used inside the advection / diffusion passes. |
+| BFECC | boolean | true | Enable BFECC advection (error-compensated) for crisper flow; disable for slight performance gain. |
+| isViscous | boolean | false | Toggle iterative viscosity solve (smoother, thicker motion when enabled). |
+| viscous | number | 30 | Viscosity coefficient used when isViscous is true. |
+| iterationsViscous | number | 32 | Number of Gauss-Seidel iterations for viscosity (higher = smoother, slower). |
+| iterationsPoisson | number | 32 | Number of pressure Poisson iterations to enforce incompressibility. |
+| isBounce | boolean | false | If true, shows bounce boundaries (velocity clamped at edges). |
+| autoDemo | boolean | true | Enable idle auto-driving of the pointer when no user interaction. |
+| autoSpeed | number | 0.5 | Speed (normalized units/sec) for auto pointer motion. |
+| autoIntensity | number | 2.2 | Multiplier applied to velocity delta while in auto mode. |
+| takeoverDuration | number | 0.25 | Seconds to interpolate from auto pointer to real cursor when user moves mouse. |
+| autoResumeDelay | number | 1000 | Milliseconds of inactivity before auto mode resumes. |
+| autoRampDuration | number | 0.6 | Seconds to ramp auto movement speed from 0 to full after activation. |
+| className | string | '' | Optional class for the root container. |
+| style | React.CSSProperties | {} | Inline styles applied to the root container. |
+
+### Full Component Source
+```jsx
+import { useEffect, useRef } from 'react';
+import * as THREE from 'three';
+import './LiquidEther.css';
+
+export default function LiquidEther({
+  mouseForce = 20,
+  cursorSize = 100,
+  isViscous = false,
+  viscous = 30,
+  iterationsViscous = 32,
+  iterationsPoisson = 32,
+  dt = 0.014,
+  BFECC = true,
+  resolution = 0.5,
+  isBounce = false,
+  colors = ['#5227FF', '#FF9FFC', '#B497CF'],
+  style = {},
+  className = '',
+  autoDemo = true,
+  autoSpeed = 0.5,
+  autoIntensity = 2.2,
+  takeoverDuration = 0.25,
+  autoResumeDelay = 1000,
+  autoRampDuration = 0.6
+}) {
+  const mountRef = useRef(null);
+  const webglRef = useRef(null);
+  const resizeObserverRef = useRef(null);
+  const rafRef = useRef(null);
+  const intersectionObserverRef = useRef(null);
+  const isVisibleRef = useRef(true);
+  const resizeRafRef = useRef(null);
+
+  useEffect(() => {
+    if (!mountRef.current) return;
+
+    function makePaletteTexture(stops) {
+      let arr;
+      if (Array.isArray(stops) && stops.length > 0) {
+        if (stops.length === 1) {
+          arr = [stops[0], stops[0]];
+        } else {
+          arr = stops;
+        }
+      } else {
+        arr = ['#ffffff', '#ffffff'];
+      }
+      const w = arr.length;
+      const data = new Uint8Array(w * 4);
+      for (let i = 0; i < w; i++) {
+        const c = new THREE.Color(arr[i]);
+        data[i * 4 + 0] = Math.round(c.r * 255);
+        data[i * 4 + 1] = Math.round(c.g * 255);
+        data[i * 4 + 2] = Math.round(c.b * 255);
+        data[i * 4 + 3] = 255;
+      }
+      const tex = new THREE.DataTexture(data, w, 1, THREE.RGBAFormat);
+      tex.magFilter = THREE.LinearFilter;
+      tex.minFilter = THREE.LinearFilter;
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.generateMipmaps = false;
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    const paletteTex = makePaletteTexture(colors);
+    const bgVec4 = new THREE.Vector4(0, 0, 0, 0); // always transparent
+
+    class CommonClass {
+      constructor() {
+        this.width = 0;
+        this.height = 0;
+        this.aspect = 1;
+        this.pixelRatio = 1;
+        this.isMobile = false;
+        this.breakpoint = 768;
+        this.fboWidth = null;
+        this.fboHeight = null;
+        this.time = 0;
+        this.delta = 0;
+        this.container = null;
+        this.renderer = null;
+        this.clock = null;
+      }
+      init(container) {
+        this.container = container;
+        this.pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        this.resize();
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer.autoClear = false;
+        this.renderer.setClearColor(new THREE.Color(0x000000), 0);
+        this.renderer.setPixelRatio(this.pixelRatio);
+        this.renderer.setSize(this.width, this.height);
+        this.renderer.domElement.style.width = '100%';
+        this.renderer.domElement.style.height = '100%';
+        this.renderer.domElement.style.display = 'block';
+        this.clock = new THREE.Clock();
+        this.clock.start();
+      }
+      resize() {
+        if (!this.container) return;
+        const rect = this.container.getBoundingClientRect();
+        this.width = Math.max(1, Math.floor(rect.width));
+        this.height = Math.max(1, Math.floor(rect.height));
+        this.aspect = this.width / this.height;
+        if (this.renderer) this.renderer.setSize(this.width, this.height, false);
+      }
+      update() {
+        this.delta = this.clock.getDelta();
+        this.time += this.delta;
+      }
+    }
+    const Common = new CommonClass();
+
+    class MouseClass {
+      constructor() {
+        this.mouseMoved = false;
+        this.coords = new THREE.Vector2();
+        this.coords_old = new THREE.Vector2();
+        this.diff = new THREE.Vector2();
+        this.timer = null;
+        this.container = null;
+        this.docTarget = null;
+        this.listenerTarget = null;
+        this.isHoverInside = false;
+        this.hasUserControl = false;
+        this.isAutoActive = false;
+        this.autoIntensity = 2.0;
+        this.takeoverActive = false;
+        this.takeoverStartTime = 0;
+        this.takeoverDuration = 0.25;
+        this.takeoverFrom = new THREE.Vector2();
+        this.takeoverTo = new THREE.Vector2();
+        this.onInteract = null;
+        this._onMouseMove = this.onDocumentMouseMove.bind(this);
+        this._onTouchStart = this.onDocumentTouchStart.bind(this);
+        this._onTouchMove = this.onDocumentTouchMove.bind(this);
+        this._onTouchEnd = this.onTouchEnd.bind(this);
+        this._onDocumentLeave = this.onDocumentLeave.bind(this);
+      }
+      init(container) {
+        this.container = container;
+        this.docTarget = container.ownerDocument || null;
+        const defaultView =
+          (this.docTarget && this.docTarget.defaultView) || (typeof window !== 'undefined' ? window : null);
+        if (!defaultView) return;
+        this.listenerTarget = defaultView;
+        this.listenerTarget.addEventListener('mousemove', this._onMouseMove);
+        this.listenerTarget.addEventListener('touchstart', this._onTouchStart, { passive: true });
+        this.listenerTarget.addEventListener('touchmove', this._onTouchMove, { passive: true });
+        this.listenerTarget.addEventListener('touchend', this._onTouchEnd);
+        if (this.docTarget) {
+          this.docTarget.addEventListener('mouseleave', this._onDocumentLeave);
+        }
+      }
+      dispose() {
+        if (this.listenerTarget) {
+          this.listenerTarget.removeEventListener('mousemove', this._onMouseMove);
+          this.listenerTarget.removeEventListener('touchstart', this._onTouchStart);
+          this.listenerTarget.removeEventListener('touchmove', this._onTouchMove);
+          this.listenerTarget.removeEventListener('touchend', this._onTouchEnd);
+        }
+        if (this.docTarget) {
+          this.docTarget.removeEventListener('mouseleave', this._onDocumentLeave);
+        }
+        this.listenerTarget = null;
+        this.docTarget = null;
+        this.container = null;
+      }
+      isPointInside(clientX, clientY) {
+        if (!this.container) return false;
+        const rect = this.container.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return false;
+        return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+      }
+      updateHoverState(clientX, clientY) {
+        this.isHoverInside = this.isPointInside(clientX, clientY);
+        return this.isHoverInside;
+      }
+      setCoords(x, y) {
+        if (!this.container) return;
+        if (this.timer) window.clearTimeout(this.timer);
+        const rect = this.container.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        const nx = (x - rect.left) / rect.width;
+        const ny = (y - rect.top) / rect.height;
+        this.coords.set(nx * 2 - 1, -(ny * 2 - 1));
+        this.mouseMoved = true;
+        this.timer = window.setTimeout(() => {
+          this.mouseMoved = false;
+        }, 100);
+      }
+      setNormalized(nx, ny) {
+        this.coords.set(nx, ny);
+        this.mouseMoved = true;
+      }
+      onDocumentMouseMove(event) {
+        if (!this.updateHoverState(event.clientX, event.clientY)) return;
+        if (this.onInteract) this.onInteract();
+        if (this.isAutoActive && !this.hasUserControl && !this.takeoverActive) {
+          if (!this.container) return;
+          const rect = this.container.getBoundingClientRect();
+          if (rect.width === 0 || rect.height === 0) return;
+          const nx = (event.clientX - rect.left) / rect.width;
+          const ny = (event.clientY - rect.top) / rect.height;
+          this.takeoverFrom.copy(this.coords);
+          this.takeoverTo.set(nx * 2 - 1, -(ny * 2 - 1));
+          this.takeoverStartTime = performance.now();
+          this.takeoverActive = true;
+          this.hasUserControl = true;
+          this.isAutoActive = false;
+          return;
+        }
+        this.setCoords(event.clientX, event.clientY);
+        this.hasUserControl = true;
+      }
+      onDocumentTouchStart(event) {
+        if (event.touches.length !== 1) return;
+        const t = event.touches[0];
+        if (!this.updateHoverState(t.clientX, t.clientY)) return;
+        if (this.onInteract) this.onInteract();
+        this.setCoords(t.clientX, t.clientY);
+        this.hasUserControl = true;
+      }
+      onDocumentTouchMove(event) {
+        if (event.touches.length !== 1) return;
+        const t = event.touches[0];
+        if (!this.updateHoverState(t.clientX, t.clientY)) return;
+        if (this.onInteract) this.onInteract();
+        this.setCoords(t.clientX, t.clientY);
+      }
+      onTouchEnd() {
+        this.isHoverInside = false;
+      }
+      onDocumentLeave() {
+        this.isHoverInside = false;
+      }
+      update() {
+        if (this.takeoverActive) {
+          const t = (performance.now() - this.takeoverStartTime) / (this.takeoverDuration * 1000);
+          if (t >= 1) {
+            this.takeoverActive = false;
+            this.coords.copy(this.takeoverTo);
+            this.coords_old.copy(this.coords);
+            this.diff.set(0, 0);
+          } else {
+            const k = t * t * (3 - 2 * t);
+            this.coords.copy(this.takeoverFrom).lerp(this.takeoverTo, k);
+          }
+        }
+        this.diff.subVectors(this.coords, this.coords_old);
+        this.coords_old.copy(this.coords);
+        if (this.coords_old.x === 0 && this.coords_old.y === 0) this.diff.set(0, 0);
+        if (this.isAutoActive && !this.takeoverActive) this.diff.multiplyScalar(this.autoIntensity);
+      }
+    }
+    const Mouse = new MouseClass();
+
+    class AutoDriver {
+      constructor(mouse, manager, opts) {
+        this.mouse = mouse;
+        this.manager = manager;
+        this.enabled = opts.enabled;
+        this.speed = opts.speed; // normalized units/sec
+        this.resumeDelay = opts.resumeDelay || 3000; // ms
+        this.rampDurationMs = (opts.rampDuration || 0) * 1000;
+        this.active = false;
+        this.current = new THREE.Vector2(0, 0);
+        this.target = new THREE.Vector2();
+        this.lastTime = performance.now();
+        this.activationTime = 0;
+        this.margin = 0.2;
+        this._tmpDir = new THREE.Vector2(); // reuse temp vector to avoid per-frame alloc
+        this.pickNewTarget();
+      }
+      pickNewTarget() {
+        const r = Math.random;
+        this.target.set((r() * 2 - 1) * (1 - this.margin), (r() * 2 - 1) * (1 - this.margin));
+      }
+      forceStop() {
+        this.active = false;
+        this.mouse.isAutoActive = false;
+      }
+      update() {
+        if (!this.enabled) return;
+        const now = performance.now();
+        const idle = now - this.manager.lastUserInteraction;
+        if (idle < this.resumeDelay) {
+          if (this.active) this.forceStop();
+          return;
+        }
+        if (this.mouse.isHoverInside) {
+          if (this.active) this.forceStop();
+          return;
+        }
+        if (!this.active) {
+          this.active = true;
+          this.current.copy(this.mouse.coords);
+          this.lastTime = now;
+          this.activationTime = now;
+        }
+        if (!this.active) return;
+        this.mouse.isAutoActive = true;
+        let dtSec = (now - this.lastTime) / 1000;
+        this.lastTime = now;
+        if (dtSec > 0.2) dtSec = 0.016;
+        const dir = this._tmpDir.subVectors(this.target, this.current);
+        const dist = dir.length();
+        if (dist < 0.01) {
+          this.pickNewTarget();
+          return;
+        }
+        dir.normalize();
+        let ramp = 1;
+        if (this.rampDurationMs > 0) {
+          const t = Math.min(1, (now - this.activationTime) / this.rampDurationMs);
+          ramp = t * t * (3 - 2 * t);
+        }
+        const step = this.speed * dtSec * ramp;
+        const move = Math.min(step, dist);
+        this.current.addScaledVector(dir, move);
+        this.mouse.setNormalized(this.current.x, this.current.y);
+      }
+    }
+
+    const face_vert = `
+  attribute vec3 position;
+  uniform vec2 px;
+  uniform vec2 boundarySpace;
+  varying vec2 uv;
+  precision highp float;
+  void main(){
+  vec3 pos = position;
+  vec2 scale = 1.0 - boundarySpace * 2.0;
+  pos.xy = pos.xy * scale;
+  uv = vec2(0.5)+(pos.xy)*0.5;
+  gl_Position = vec4(pos, 1.0);
+}
+`;
+    const line_vert = `
+  attribute vec3 position;
+  uniform vec2 px;
+  precision highp float;
+  varying vec2 uv;
+  void main(){
+  vec3 pos = position;
+  uv = 0.5 + pos.xy * 0.5;
+  vec2 n = sign(pos.xy);
+  pos.xy = abs(pos.xy) - px * 1.0;
+  pos.xy *= n;
+  gl_Position = vec4(pos, 1.0);
+}
+`;
+    const mouse_vert = `
+    precision highp float;
+    attribute vec3 position;
+    attribute vec2 uv;
+    uniform vec2 center;
+    uniform vec2 scale;
+    uniform vec2 px;
+    varying vec2 vUv;
+    void main(){
+    vec2 pos = position.xy * scale * 2.0 * px + center;
+    vUv = uv;
+    gl_Position = vec4(pos, 0.0, 1.0);
+}
+`;
+    const advection_frag = `
+    precision highp float;
+    uniform sampler2D velocity;
+    uniform float dt;
+    uniform bool isBFECC;
+    uniform vec2 fboSize;
+    uniform vec2 px;
+    varying vec2 uv;
+    void main(){
+    vec2 ratio = max(fboSize.x, fboSize.y) / fboSize;
+    if(isBFECC == false){
+        vec2 vel = texture2D(velocity, uv).xy;
+        vec2 uv2 = uv - vel * dt * ratio;
+        vec2 newVel = texture2D(velocity, uv2).xy;
+        gl_FragColor = vec4(newVel, 0.0, 0.0);
+    } else {
+        vec2 spot_new = uv;
+        vec2 vel_old = texture2D(velocity, uv).xy;
+        vec2 spot_old = spot_new - vel_old * dt * ratio;
+        vec2 vel_new1 = texture2D(velocity, spot_old).xy;
+        vec2 spot_new2 = spot_old + vel_new1 * dt * ratio;
+        vec2 error = spot_new2 - spot_new;
+        vec2 spot_new3 = spot_new - error / 2.0;
+        vec2 vel_2 = texture2D(velocity, spot_new3).xy;
+        vec2 spot_old2 = spot_new3 - vel_2 * dt * ratio;
+        vec2 newVel2 = texture2D(velocity, spot_old2).xy; 
+        gl_FragColor = vec4(newVel2, 0.0, 0.0);
+    }
+}
+`;
+    const color_frag = `
+    precision highp float;
+    uniform sampler2D velocity;
+    uniform sampler2D palette;
+    uniform vec4 bgColor;
+    varying vec2 uv;
+    void main(){
+    vec2 vel = texture2D(velocity, uv).xy;
+    float lenv = clamp(length(vel), 0.0, 1.0);
+    vec3 c = texture2D(palette, vec2(lenv, 0.5)).rgb;
+    vec3 outRGB = mix(bgColor.rgb, c, lenv);
+    float outA = mix(bgColor.a, 1.0, lenv);
+    gl_FragColor = vec4(outRGB, outA);
+}
+`;
+    const divergence_frag = `
+    precision highp float;
+    uniform sampler2D velocity;
+    uniform float dt;
+    uniform vec2 px;
+    varying vec2 uv;
+    void main(){
+    float x0 = texture2D(velocity, uv-vec2(px.x, 0.0)).x;
+    float x1 = texture2D(velocity, uv+vec2(px.x, 0.0)).x;
+    float y0 = texture2D(velocity, uv-vec2(0.0, px.y)).y;
+    float y1 = texture2D(velocity, uv+vec2(0.0, px.y)).y;
+    float divergence = (x1 - x0 + y1 - y0) / 2.0;
+    gl_FragColor = vec4(divergence / dt);
+}
+`;
+    const externalForce_frag = `
+    precision highp float;
+    uniform vec2 force;
+    uniform vec2 center;
+    uniform vec2 scale;
+    uniform vec2 px;
+    varying vec2 vUv;
+    void main(){
+    vec2 circle = (vUv - 0.5) * 2.0;
+    float d = 1.0 - min(length(circle), 1.0);
+    d *= d;
+    gl_FragColor = vec4(force * d, 0.0, 1.0);
+}
+`;
+    const poisson_frag = `
+    precision highp float;
+    uniform sampler2D pressure;
+    uniform sampler2D divergence;
+    uniform vec2 px;
+    varying vec2 uv;
+    void main(){
+    float p0 = texture2D(pressure, uv + vec2(px.x * 2.0, 0.0)).r;
+    float p1 = texture2D(pressure, uv - vec2(px.x * 2.0, 0.0)).r;
+    float p2 = texture2D(pressure, uv + vec2(0.0, px.y * 2.0)).r;
+    float p3 = texture2D(pressure, uv - vec2(0.0, px.y * 2.0)).r;
+    float div = texture2D(divergence, uv).r;
+    float newP = (p0 + p1 + p2 + p3) / 4.0 - div;
+    gl_FragColor = vec4(newP);
+}
+`;
+    const pressure_frag = `
+    precision highp float;
+    uniform sampler2D pressure;
+    uniform sampler2D velocity;
+    uniform vec2 px;
+    uniform float dt;
+    varying vec2 uv;
+    void main(){
+    float step = 1.0;
+    float p0 = texture2D(pressure, uv + vec2(px.x * step, 0.0)).r;
+    float p1 = texture2D(pressure, uv - vec2(px.x * step, 0.0)).r;
+    float p2 = texture2D(pressure, uv + vec2(0.0, px.y * step)).r;
+    float p3 = texture2D(pressure, uv - vec2(0.0, px.y * step)).r;
+    vec2 v = texture2D(velocity, uv).xy;
+    vec2 gradP = vec2(p0 - p1, p2 - p3) * 0.5;
+    v = v - gradP * dt;
+    gl_FragColor = vec4(v, 0.0, 1.0);
+}
+`;
+    const viscous_frag = `
+    precision highp float;
+    uniform sampler2D velocity;
+    uniform sampler2D velocity_new;
+    uniform float v;
+    uniform vec2 px;
+    uniform float dt;
+    varying vec2 uv;
+    void main(){
+    vec2 old = texture2D(velocity, uv).xy;
+    vec2 new0 = texture2D(velocity_new, uv + vec2(px.x * 2.0, 0.0)).xy;
+    vec2 new1 = texture2D(velocity_new, uv - vec2(px.x * 2.0, 0.0)).xy;
+    vec2 new2 = texture2D(velocity_new, uv + vec2(0.0, px.y * 2.0)).xy;
+    vec2 new3 = texture2D(velocity_new, uv - vec2(0.0, px.y * 2.0)).xy;
+    vec2 newv = 4.0 * old + v * dt * (new0 + new1 + new2 + new3);
+    newv /= 4.0 * (1.0 + v * dt);
+    gl_FragColor = vec4(newv, 0.0, 0.0);
+}
+`;
+
+    class ShaderPass {
+      constructor(props) {
+        this.props = props || {};
+        this.uniforms = this.props.material?.uniforms;
+        this.scene = null;
+        this.camera = null;
+        this.material = null;
+        this.geometry = null;
+        this.plane = null;
+      }
+      init() {
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.Camera();
+        if (this.uniforms) {
+          this.material = new THREE.RawShaderMaterial(this.props.material);
+          this.geometry = new THREE.PlaneGeometry(2.0, 2.0);
+          this.plane = new THREE.Mesh(this.geometry, this.material);
+          this.scene.add(this.plane);
+        }
+      }
+      update() {
+        Common.renderer.setRenderTarget(this.props.output || null);
+        Common.renderer.render(this.scene, this.camera);
+        Common.renderer.setRenderTarget(null);
+      }
+    }
+
+    class Advection extends ShaderPass {
+      constructor(simProps) {
+        super({
+          material: {
+            vertexShader: face_vert,
+            fragmentShader: advection_frag,
+            uniforms: {
+              boundarySpace: { value: simProps.cellScale },
+              px: { value: simProps.cellScale },
+              fboSize: { value: simProps.fboSize },
+              velocity: { value: simProps.src.texture },
+              dt: { value: simProps.dt },
+              isBFECC: { value: true }
+            }
+          },
+          output: simProps.dst
+        });
+        this.uniforms = this.props.material.uniforms;
+        this.init();
+      }
+      init() {
+        super.init();
+        this.createBoundary();
+      }
+      createBoundary() {
+        const boundaryG = new THREE.BufferGeometry();
+        const vertices_boundary = new Float32Array([
+          -1, -1, 0, -1, 1, 0, -1, 1, 0, 1, 1, 0, 1, 1, 0, 1, -1, 0, 1, -1, 0, -1, -1, 0
+        ]);
+        boundaryG.setAttribute('position', new THREE.BufferAttribute(vertices_boundary, 3));
+        const boundaryM = new THREE.RawShaderMaterial({
+          vertexShader: line_vert,
+          fragmentShader: advection_frag,
+          uniforms: this.uniforms
+        });
+        this.line = new THREE.LineSegments(boundaryG, boundaryM);
+        this.scene.add(this.line);
+      }
+      update({ dt, isBounce, BFECC }) {
+        this.uniforms.dt.value = dt;
+        this.line.visible = isBounce;
+        this.uniforms.isBFECC.value = BFECC;
+        super.update();
+      }
+    }
+
+    class ExternalForce extends ShaderPass {
+      constructor(simProps) {
+        super({ output: simProps.dst });
+        this.init(simProps);
+      }
+      init(simProps) {
+        super.init();
+        const mouseG = new THREE.PlaneGeometry(1, 1);
+        const mouseM = new THREE.RawShaderMaterial({
+          vertexShader: mouse_vert,
+          fragmentShader: externalForce_frag,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          uniforms: {
+            px: { value: simProps.cellScale },
+            force: { value: new THREE.Vector2(0.0, 0.0) },
+            center: { value: new THREE.Vector2(0.0, 0.0) },
+            scale: { value: new THREE.Vector2(simProps.cursor_size, simProps.cursor_size) }
+          }
+        });
+        this.mouse = new THREE.Mesh(mouseG, mouseM);
+        this.scene.add(this.mouse);
+      }
+      update(props) {
+        const forceX = (Mouse.diff.x / 2) * props.mouse_force;
+        const forceY = (Mouse.diff.y / 2) * props.mouse_force;
+        const cursorSizeX = props.cursor_size * props.cellScale.x;
+        const cursorSizeY = props.cursor_size * props.cellScale.y;
+        const centerX = Math.min(
+          Math.max(Mouse.coords.x, -1 + cursorSizeX + props.cellScale.x * 2),
+          1 - cursorSizeX - props.cellScale.x * 2
+        );
+        const centerY = Math.min(
+          Math.max(Mouse.coords.y, -1 + cursorSizeY + props.cellScale.y * 2),
+          1 - cursorSizeY - props.cellScale.y * 2
+        );
+        const uniforms = this.mouse.material.uniforms;
+        uniforms.force.value.set(forceX, forceY);
+        uniforms.center.value.set(centerX, centerY);
+        uniforms.scale.value.set(props.cursor_size, props.cursor_size);
+        super.update();
+      }
+    }
+
+    class Viscous extends ShaderPass {
+      constructor(simProps) {
+        super({
+          material: {
+            vertexShader: face_vert,
+            fragmentShader: viscous_frag,
+            uniforms: {
+              boundarySpace: { value: simProps.boundarySpace },
+              velocity: { value: simProps.src.texture },
+              velocity_new: { value: simProps.dst_.texture },
+              v: { value: simProps.viscous },
+              px: { value: simProps.cellScale },
+              dt: { value: simProps.dt }
+            }
+          },
+          output: simProps.dst,
+          output0: simProps.dst_,
+          output1: simProps.dst
+        });
+        this.init();
+      }
+      update({ viscous, iterations, dt }) {
+        let fbo_in, fbo_out;
+        this.uniforms.v.value = viscous;
+        for (let i = 0; i < iterations; i++) {
+          if (i % 2 === 0) {
+            fbo_in = this.props.output0;
+            fbo_out = this.props.output1;
+          } else {
+            fbo_in = this.props.output1;
+            fbo_out = this.props.output0;
+          }
+          this.uniforms.velocity_new.value = fbo_in.texture;
+          this.props.output = fbo_out;
+          this.uniforms.dt.value = dt;
+          super.update();
+        }
+        return fbo_out;
+      }
+    }
+
+    class Divergence extends ShaderPass {
+      constructor(simProps) {
+        super({
+          material: {
+            vertexShader: face_vert,
+            fragmentShader: divergence_frag,
+            uniforms: {
+              boundarySpace: { value: simProps.boundarySpace },
+              velocity: { value: simProps.src.texture },
+              px: { value: simProps.cellScale },
+              dt: { value: simProps.dt }
+            }
+          },
+          output: simProps.dst
+        });
+        this.init();
+      }
+      update({ vel }) {
+        this.uniforms.velocity.value = vel.texture;
+        super.update();
+      }
+    }
+
+    class Poisson extends ShaderPass {
+      constructor(simProps) {
+        super({
+          material: {
+            vertexShader: face_vert,
+            fragmentShader: poisson_frag,
+            uniforms: {
+              boundarySpace: { value: simProps.boundarySpace },
+              pressure: { value: simProps.dst_.texture },
+              divergence: { value: simProps.src.texture },
+              px: { value: simProps.cellScale }
+            }
+          },
+          output: simProps.dst,
+          output0: simProps.dst_,
+          output1: simProps.dst
+        });
+        this.init();
+      }
+      update({ iterations }) {
+        let p_in, p_out;
+        for (let i = 0; i < iterations; i++) {
+          if (i % 2 === 0) {
+            p_in = this.props.output0;
+            p_out = this.props.output1;
+          } else {
+            p_in = this.props.output1;
+            p_out = this.props.output0;
+          }
+          this.uniforms.pressure.value = p_in.texture;
+          this.props.output = p_out;
+          super.update();
+        }
+        return p_out;
+      }
+    }
+
+    class Pressure extends ShaderPass {
+      constructor(simProps) {
+        super({
+          material: {
+            vertexShader: face_vert,
+            fragmentShader: pressure_frag,
+            uniforms: {
+              boundarySpace: { value: simProps.boundarySpace },
+              pressure: { value: simProps.src_p.texture },
+              velocity: { value: simProps.src_v.texture },
+              px: { value: simProps.cellScale },
+              dt: { value: simProps.dt }
+            }
+          },
+          output: simProps.dst
+        });
+        this.init();
+      }
+      update({ vel, pressure }) {
+        this.uniforms.velocity.value = vel.texture;
+        this.uniforms.pressure.value = pressure.texture;
+        super.update();
+      }
+    }
+
+    class Simulation {
+      constructor(options) {
+        this.options = {
+          iterations_poisson: 32,
+          iterations_viscous: 32,
+          mouse_force: 20,
+          resolution: 0.5,
+          cursor_size: 100,
+          viscous: 30,
+          isBounce: false,
+          dt: 0.014,
+          isViscous: false,
+          BFECC: true,
+          ...options
+        };
+        this.fbos = {
+          vel_0: null,
+          vel_1: null,
+          vel_viscous0: null,
+          vel_viscous1: null,
+          div: null,
+          pressure_0: null,
+          pressure_1: null
+        };
+        this.fboSize = new THREE.Vector2();
+        this.cellScale = new THREE.Vector2();
+        this.boundarySpace = new THREE.Vector2();
+        this.init();
+      }
+      init() {
+        this.calcSize();
+        this.createAllFBO();
+        this.createShaderPass();
+      }
+      getFloatType() {
+        const isIOS = /(iPad|iPhone|iPod)/i.test(navigator.userAgent);
+        return isIOS ? THREE.HalfFloatType : THREE.FloatType;
+      }
+      createAllFBO() {
+        const type = this.getFloatType();
+        const opts = {
+          type,
+          depthBuffer: false,
+          stencilBuffer: false,
+          minFilter: THREE.LinearFilter,
+          magFilter: THREE.LinearFilter,
+          wrapS: THREE.ClampToEdgeWrapping,
+          wrapT: THREE.ClampToEdgeWrapping
+        };
+        for (let key in this.fbos) {
+          this.fbos[key] = new THREE.WebGLRenderTarget(this.fboSize.x, this.fboSize.y, opts);
+        }
+      }
+      createShaderPass() {
+        this.advection = new Advection({
+          cellScale: this.cellScale,
+          fboSize: this.fboSize,
+          dt: this.options.dt,
+          src: this.fbos.vel_0,
+          dst: this.fbos.vel_1
+        });
+        this.externalForce = new ExternalForce({
+          cellScale: this.cellScale,
+          cursor_size: this.options.cursor_size,
+          dst: this.fbos.vel_1
+        });
+        this.viscous = new Viscous({
+          cellScale: this.cellScale,
+          boundarySpace: this.boundarySpace,
+          viscous: this.options.viscous,
+          src: this.fbos.vel_1,
+          dst: this.fbos.vel_viscous1,
+          dst_: this.fbos.vel_viscous0,
+          dt: this.options.dt
+        });
+        this.divergence = new Divergence({
+          cellScale: this.cellScale,
+          boundarySpace: this.boundarySpace,
+          src: this.fbos.vel_viscous0,
+          dst: this.fbos.div,
+          dt: this.options.dt
+        });
+        this.poisson = new Poisson({
+          cellScale: this.cellScale,
+          boundarySpace: this.boundarySpace,
+          src: this.fbos.div,
+          dst: this.fbos.pressure_1,
+          dst_: this.fbos.pressure_0
+        });
+        this.pressure = new Pressure({
+          cellScale: this.cellScale,
+          boundarySpace: this.boundarySpace,
+          src_p: this.fbos.pressure_0,
+          src_v: this.fbos.vel_viscous0,
+          dst: this.fbos.vel_0,
+          dt: this.options.dt
+        });
+      }
+      calcSize() {
+        const width = Math.max(1, Math.round(this.options.resolution * Common.width));
+        const height = Math.max(1, Math.round(this.options.resolution * Common.height));
+        const px_x = 1.0 / width;
+        const px_y = 1.0 / height;
+        this.cellScale.set(px_x, px_y);
+        this.fboSize.set(width, height);
+      }
+      resize() {
+        this.calcSize();
+        for (let key in this.fbos) {
+          this.fbos[key].setSize(this.fboSize.x, this.fboSize.y);
+        }
+      }
+      update() {
+        if (this.options.isBounce) {
+          this.boundarySpace.set(0, 0);
+        } else {
+          this.boundarySpace.copy(this.cellScale);
+        }
+        this.advection.update({
+          dt: this.options.dt,
+          isBounce: this.options.isBounce,
+          BFECC: this.options.BFECC
+        });
+        this.externalForce.update({
+          cursor_size: this.options.cursor_size,
+          mouse_force: this.options.mouse_force,
+          cellScale: this.cellScale
+        });
+        let vel = this.fbos.vel_1;
+        if (this.options.isViscous) {
+          vel = this.viscous.update({
+            viscous: this.options.viscous,
+            iterations: this.options.iterations_viscous,
+            dt: this.options.dt
+          });
+        }
+        this.divergence.update({ vel });
+        const pressure = this.poisson.update({
+          iterations: this.options.iterations_poisson
+        });
+        this.pressure.update({ vel, pressure });
+      }
+    }
+
+    class Output {
+      constructor() {
+        this.init();
+      }
+      init() {
+        this.simulation = new Simulation();
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.Camera();
+        this.output = new THREE.Mesh(
+          new THREE.PlaneGeometry(2, 2),
+          new THREE.RawShaderMaterial({
+            vertexShader: face_vert,
+            fragmentShader: color_frag,
+            transparent: true,
+            depthWrite: false,
+            uniforms: {
+              velocity: { value: this.simulation.fbos.vel_0.texture },
+              boundarySpace: { value: new THREE.Vector2() },
+              palette: { value: paletteTex },
+              bgColor: { value: bgVec4 }
+            }
+          })
+        );
+        this.scene.add(this.output);
+      }
+      addScene(mesh) {
+        this.scene.add(mesh);
+      }
+      resize() {
+        this.simulation.resize();
+      }
+      render() {
+        Common.renderer.setRenderTarget(null);
+        Common.renderer.render(this.scene, this.camera);
+      }
+      update() {
+        this.simulation.update();
+        this.render();
+      }
+    }
+
+    class WebGLManager {
+      constructor(props) {
+        this.props = props;
+        Common.init(props.$wrapper);
+        Mouse.init(props.$wrapper);
+        Mouse.autoIntensity = props.autoIntensity;
+        Mouse.takeoverDuration = props.takeoverDuration;
+        this.lastUserInteraction = performance.now();
+        Mouse.onInteract = () => {
+          this.lastUserInteraction = performance.now();
+          if (this.autoDriver) this.autoDriver.forceStop();
+        };
+        this.autoDriver = new AutoDriver(Mouse, this, {
+          enabled: props.autoDemo,
+          speed: props.autoSpeed,
+          resumeDelay: props.autoResumeDelay,
+          rampDuration: props.autoRampDuration
+        });
+        this.init();
+        this._loop = this.loop.bind(this);
+        this._resize = this.resize.bind(this);
+        window.addEventListener('resize', this._resize);
+        this._onVisibility = () => {
+          const hidden = document.hidden;
+          if (hidden) {
+            this.pause();
+          } else if (isVisibleRef.current) {
+            this.start();
+          }
+        };
+        document.addEventListener('visibilitychange', this._onVisibility);
+        this.running = false;
+      }
+      init() {
+        this.props.$wrapper.prepend(Common.renderer.domElement);
+        this.output = new Output();
+      }
+      resize() {
+        Common.resize();
+        this.output.resize();
+      }
+      render() {
+        if (this.autoDriver) this.autoDriver.update();
+        Mouse.update();
+        Common.update();
+        this.output.update();
+      }
+      loop() {
+        if (!this.running) return; // safety
+        this.render();
+        rafRef.current = requestAnimationFrame(this._loop);
+      }
+      start() {
+        if (this.running) return;
+        this.running = true;
+        this._loop();
+      }
+      pause() {
+        this.running = false;
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+      }
+      dispose() {
+        try {
+          window.removeEventListener('resize', this._resize);
+          document.removeEventListener('visibilitychange', this._onVisibility);
+          Mouse.dispose();
+          if (Common.renderer) {
+            const canvas = Common.renderer.domElement;
+            if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+            Common.renderer.dispose();
+            Common.renderer.forceContextLoss();
+          }
+        } catch (e) {
+          void 0;
+        }
+      }
+    }
+
+    const container = mountRef.current;
+    container.style.position = container.style.position || 'relative';
+    container.style.overflow = container.style.overflow || 'hidden';
+
+    const webgl = new WebGLManager({
+      $wrapper: container,
+      autoDemo,
+      autoSpeed,
+      autoIntensity,
+      takeoverDuration,
+      autoResumeDelay,
+      autoRampDuration
+    });
+    webglRef.current = webgl;
+
+    const applyOptionsFromProps = () => {
+      if (!webglRef.current) return;
+      const sim = webglRef.current.output?.simulation;
+      if (!sim) return;
+      const prevRes = sim.options.resolution;
+      Object.assign(sim.options, {
+        mouse_force: mouseForce,
+        cursor_size: cursorSize,
+        isViscous,
+        viscous,
+        iterations_viscous: iterationsViscous,
+        iterations_poisson: iterationsPoisson,
+        dt,
+        BFECC,
+        resolution,
+        isBounce
+      });
+      if (resolution !== prevRes) {
+        sim.resize();
+      }
+    };
+    applyOptionsFromProps();
+
+    webgl.start();
+
+    // IntersectionObserver to pause rendering when not visible
+    const io = new IntersectionObserver(
+      entries => {
+        const entry = entries[0];
+        const isVisible = entry.isIntersecting && entry.intersectionRatio > 0;
+        isVisibleRef.current = isVisible;
+        if (!webglRef.current) return;
+        if (isVisible && !document.hidden) {
+          webglRef.current.start();
+        } else {
+          webglRef.current.pause();
+        }
+      },
+      { threshold: [0, 0.01, 0.1] }
+    );
+    io.observe(container);
+    intersectionObserverRef.current = io;
+
+    const ro = new ResizeObserver(() => {
+      if (!webglRef.current) return;
+      if (resizeRafRef.current) cancelAnimationFrame(resizeRafRef.current);
+      resizeRafRef.current = requestAnimationFrame(() => {
+        if (!webglRef.current) return;
+        webglRef.current.resize();
+      });
+    });
+    ro.observe(container);
+    resizeObserverRef.current = ro;
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (resizeObserverRef.current) {
+        try {
+          resizeObserverRef.current.disconnect();
+        } catch (e) {
+          void 0;
+        }
+      }
+      if (intersectionObserverRef.current) {
+        try {
+          intersectionObserverRef.current.disconnect();
+        } catch (e) {
+          void 0;
+        }
+      }
+      if (webglRef.current) {
+        webglRef.current.dispose();
+      }
+      webglRef.current = null;
+    };
+  }, [
+    BFECC,
+    cursorSize,
+    dt,
+    isBounce,
+    isViscous,
+    iterationsPoisson,
+    iterationsViscous,
+    mouseForce,
+    resolution,
+    viscous,
+    colors,
+    autoDemo,
+    autoSpeed,
+    autoIntensity,
+    takeoverDuration,
+    autoResumeDelay,
+    autoRampDuration
+  ]);
+
+  useEffect(() => {
+    const webgl = webglRef.current;
+    if (!webgl) return;
+    const sim = webgl.output?.simulation;
+    if (!sim) return;
+    const prevRes = sim.options.resolution;
+    Object.assign(sim.options, {
+      mouse_force: mouseForce,
+      cursor_size: cursorSize,
+      isViscous,
+      viscous,
+      iterations_viscous: iterationsViscous,
+      iterations_poisson: iterationsPoisson,
+      dt,
+      BFECC,
+      resolution,
+      isBounce
+    });
+    if (webgl.autoDriver) {
+      webgl.autoDriver.enabled = autoDemo;
+      webgl.autoDriver.speed = autoSpeed;
+      webgl.autoDriver.resumeDelay = autoResumeDelay;
+      webgl.autoDriver.rampDurationMs = autoRampDuration * 1000;
+      if (webgl.autoDriver.mouse) {
+        webgl.autoDriver.mouse.autoIntensity = autoIntensity;
+        webgl.autoDriver.mouse.takeoverDuration = takeoverDuration;
+      }
+    }
+    if (resolution !== prevRes) {
+      sim.resize();
+    }
+  }, [
+    mouseForce,
+    cursorSize,
+    isViscous,
+    viscous,
+    iterationsViscous,
+    iterationsPoisson,
+    dt,
+    BFECC,
+    resolution,
+    isBounce,
+    autoDemo,
+    autoSpeed,
+    autoIntensity,
+    takeoverDuration,
+    autoResumeDelay,
+    autoRampDuration
+  ]);
+
+  return <div ref={mountRef} className={`liquid-ether-container ${className || ''}`} style={style} />;
+}
+
+```
+
+### Component CSS
+```css
+.liquid-ether-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+```
+
+### Integration Instructions
+1. Install any listed dependencies.
+2. Copy the component source into the appropriate directory in the project.
+3. Import the CSS file alongside the component.
+4. Import and render the component using the usage example above as a starting point.
+5. Adjust props as needed for the specific use case — refer to the props table for all available options.
+
+### More from React Bits
+The full library index, including everything reactbits.dev offers, is at https://reactbits.dev/llms.txt — fetch it if this component is not the right fit or the project needs more pieces.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
