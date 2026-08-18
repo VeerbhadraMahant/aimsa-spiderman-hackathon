@@ -8,17 +8,18 @@ interface SlotDef {
   base: CSSProperties
 }
 
-// Base anchor points, viewport-relative (position: fixed).
+// Base anchor points, viewport-relative (position: fixed). Insets are kept
+// well clear of the viewport edge (75px image + jitter) so nothing clips.
 const HOME_SLOTS: SlotDef[] = [
-  { key: 'left-mid', base: { left: 20, top: '50%' } },
-  { key: 'left-mid-below', base: { left: 20, top: 'calc(50% + 40px)' } },
-  { key: 'right-upper', base: { right: 20, top: 'calc(50% - 60px)' } },
-  { key: 'right-bottom', base: { right: 20, bottom: 28 } },
+  { key: 'left-mid', base: { left: 38, top: '50%' } },
+  { key: 'left-mid-below', base: { left: 38, top: 'calc(50% + 46px)' } },
+  { key: 'right-upper', base: { right: 38, top: 'calc(50% - 66px)' } },
+  { key: 'right-bottom', base: { right: 38, bottom: 44 } },
 ]
 
 const DASHBOARD_EXTRA_SLOTS: SlotDef[] = [
-  { key: 'top-left', base: { left: 20, top: 16 } },
-  { key: 'top-right', base: { right: 20, top: 16 } },
+  { key: 'top-left', base: { left: 38, top: 30 } },
+  { key: 'top-right', base: { right: 38, top: 30 } },
 ]
 
 // Home screen: only 3 dark-mode images exist, so the "left-mid-below" slot
@@ -39,8 +40,8 @@ function useJitter(count: number) {
   return useMemo(
     () =>
       Array.from({ length: count }, () => ({
-        dx: Math.round((Math.random() - 0.5) * 70), // -35..+35
-        dy: Math.round((Math.random() - 0.5) * 70),
+        dx: Math.round((Math.random() - 0.5) * 32), // -16..+16, a subtle shift only
+        dy: Math.round((Math.random() - 0.5) * 32),
         size: 75, // 75x75 box; object-contain below preserves each image's aspect ratio inside it
         rotate: Math.round((Math.random() - 0.5) * 16), // -8..8deg
         duration: 5 + Math.random() * 3, // 5..8s bob cycle
